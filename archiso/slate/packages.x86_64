@@ -1,0 +1,42 @@
+base
+linux
+mkinitcpio
+mkinitcpio-archiso
+syslinux
+
+# Desktop environment: Hyprland (Wayland compositor)
+hyprland
+xorg-xwayland
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+foot
+pipewire
+pipewire-pulse
+wireplumber
+
+# Without a font package foot (and any other Wayland client) cannot render
+# any text at all - confirmed by boot-testing, not a cosmetic nice-to-have.
+ttf-dejavu
+
+# Runtimes & tools
+bun
+direnv
+go
+nodejs
+rust
+uv
+
+# Containers (podman). netavark/aardvark-dns are pinned explicitly: they're
+# the provider containers-common picks for the virtual container-network-stack
+# package, and leaving it unpinned makes pacman prompt interactively during
+# mkarchiso's unattended pacstrap (which would hang the build).
+aardvark-dns
+netavark
+podman
+podman-compose
+podman-docker
+# fuse-overlayfs is required as podman's storage mount_program: the live
+# ISO's own root filesystem is itself an overlay (squashfs/erofs + tmpfs
+# cow), and the kernel overlay driver cannot mount overlay-on-overlay -
+# confirmed by boot-testing ("'overlay' is not supported over overlayfs").
+fuse-overlayfs

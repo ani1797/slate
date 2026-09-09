@@ -1,0 +1,18 @@
+# direnv's built-in stdlib has layout_python/layout_python3/etc. but no
+# layout_uv (confirmed by inspecting the shipped direnv 2.37.1 binary's
+# embedded stdlib) - this defines it so `.envrc` files can use
+# `layout uv` for uv-managed virtualenvs, same shape as the built-in
+# layout_python.
+layout_uv() {
+  if [[ -d .venv ]]; then
+    VIRTUAL_ENV="$(pwd)/.venv"
+  fi
+
+  if [[ -z $VIRTUAL_ENV || ! -d $VIRTUAL_ENV ]]; then
+    uv venv >&2
+    VIRTUAL_ENV="$(pwd)/.venv"
+  fi
+
+  PATH_add "$VIRTUAL_ENV/bin"
+  export VIRTUAL_ENV
+}

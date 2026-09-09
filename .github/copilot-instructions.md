@@ -2,16 +2,38 @@
 
 ## Project state
 
-This repository is a **greenfield, early-bootstrap project**. As of now there is no build
-system, no packages, no source tree, and no tests. Do not assume any conventional
-project layout, build tooling, or architecture exists — check the actual repo contents
-before relying on anything described elsewhere (including in this file's older
-revisions) as still accurate.
+This repository has a minimal initial scaffold: an archiso profile and a packaging
+convention. There is still no CI, no linting, and no tests — don't invent commands
+or config for tooling that doesn't exist. Check the actual repo contents before
+relying on anything described elsewhere (including in this file's older revisions)
+as still accurate.
 
-When you add the first real code, build steps, or tests, **update this file** with:
-- the actual build/test/lint commands (including how to run a single test)
-- the real directory layout and how the pieces fit together
-- any conventions that emerge (packaging format, scripting language, config layout, etc.)
+## Directory layout
+
+```
+archiso/slate/    Arch's archiso profile for Slate's live/install ISO (x86_64).
+                   Based on archiso's upstream "baseline" profile
+                   (/usr/share/archiso/configs/baseline), trimmed to the packages
+                   and config actually needed. See profiledef.sh for ISO metadata
+                   and boot modes, packages.x86_64 for the installed package set.
+packages/         Custom Arch packages, one PKGBUILD-based directory per package.
+                   See packages/README.md for the convention. Currently empty
+                   (no packages exist yet) — add a directory here only when a
+                   real package is needed.
+```
+
+## Build commands
+
+- Build the ISO: `sudo mkarchiso -v -o <out_dir> archiso/slate` (requires root,
+  network access to fetch packages, and `grub` installed on the build host —
+  needed by mkarchiso to validate/build the `uefi.grub` boot mode even though
+  grub itself isn't part of the ISO's package list). Verified working: produces
+  a ~430M bootable x86_64 ISO with no errors.
+- Build a package: `cd packages/<pkgname> && makepkg -si`.
+
+When you add real build steps, lint tooling, or tests beyond the above, **update
+this file** with the actual commands (including how to run a single test) and
+any new conventions that emerge.
 
 ## What this project is
 
@@ -36,13 +58,12 @@ alongside whatever agent-facing tooling gets built on top.
 
 ## Working in this repo right now
 
-- There is nothing to build, test, or lint yet — don't invent commands or config for
-  tooling that doesn't exist.
+- There is still no CI, linting, or test suite — don't invent commands or config
+  for tooling that doesn't exist.
 - Because of the "earn its keep" pillar, resist the urge to add conventional
   boilerplate (CI pipelines, linters, elaborate directory scaffolding) preemptively.
   Wait until a concrete need justifies it, and prefer the minimal version that
   satisfies that need.
-- Since this is an Arch-based distro, when packaging work begins, prefer idiomatic
-  Arch/archiso conventions (PKGBUILDs, `makepkg`, `archiso` profiles) over inventing
-  custom packaging formats, unless a custom approach is demonstrably better and earns
-  its keep.
+- Packaging work follows idiomatic Arch/archiso conventions (PKGBUILDs, `makepkg`,
+  `archiso` profiles) over inventing custom packaging formats, unless a custom
+  approach is demonstrably better and earns its keep.
