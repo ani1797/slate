@@ -5,8 +5,10 @@ per package:
 
 ```
 packages/
-└── <pkgname>/
-    └── PKGBUILD
+├── <pkgname>/
+│   └── PKGBUILD
+├── slate-launcher/
+└── vicinae-bin/
 ```
 
 ## Conventions
@@ -18,6 +20,10 @@ packages/
   it references (patches, `.install` scripts, etc.).
 - No custom packaging format or build wrapper — packages are built the
   standard way with `makepkg`.
+- Binary repackaging must pin an upstream release and checksum. ISO builds
+  never consume the AUR directly.
+- Package-owned defaults belong under `/usr/share` or `/etc/skel`; do not
+  overwrite mutable files in existing users' home directories.
 
 ## Building a package locally
 
@@ -26,5 +32,14 @@ cd packages/<pkgname>
 makepkg -si
 ```
 
-This is currently an empty convention — packages are added here as Slate
-needs them.
+To build every package without installing its runtime dependencies on the host
+and stage the local repository used by archiso:
+
+```sh
+make package-repo
+```
+
+`make build` runs this step automatically, generates a build-specific pacman
+configuration pointing at `.build/repo`, and passes that configuration to
+`mkarchiso`. Package and repository artifacts live under `.build/` and are
+removed by `make clean`.

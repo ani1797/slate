@@ -17,18 +17,18 @@ archiso/slate/    Arch's archiso profile for Slate's live/install ISO (x86_64).
                    and config actually needed. See profiledef.sh for ISO metadata
                    and boot modes, packages.x86_64 for the installed package set.
 packages/         Custom Arch packages, one PKGBUILD-based directory per package.
-                   See packages/README.md for the convention. Currently empty
-                   (no packages exist yet) — add a directory here only when a
-                   real package is needed.
+                   See packages/README.md for the convention. The ISO build
+                   stages these packages into a local pacman repository.
 ```
 
 ## Build commands
 
-- Build the ISO: `sudo mkarchiso -v -o <out_dir> archiso/slate` (requires root,
-  network access to fetch packages, and `grub` installed on the build host —
-  needed by mkarchiso to validate/build the `uefi.grub` boot mode even though
-  grub itself isn't part of the ISO's package list). Verified working: produces
-  a ~430M bootable x86_64 ISO with no errors.
+- Build all custom packages and stage the local repository:
+  `make package-repo`.
+- Build the ISO: `make build` (requires root, network access to fetch packages,
+  and `grub` installed on the build host — needed by mkarchiso to
+  validate/build the `uefi.grub` boot mode even though grub itself isn't part
+  of the ISO's package list).
 - Build a package: `cd packages/<pkgname> && makepkg -si`.
 
 When you add real build steps, lint tooling, or tests beyond the above, **update

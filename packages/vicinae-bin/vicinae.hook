@@ -1,0 +1,9 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = vicinae-bin
+
+[Action]
+Description = Restarting active Vicinae user services...
+When = PostTransaction
+Exec = /usr/bin/bash -c '/usr/bin/loginctl list-users --no-legend | /usr/bin/awk "{print \$2}" | while read -r user; do if /usr/bin/systemctl --machine="${user}@.host" --user is-active vicinae.service >/dev/null 2>&1; then /usr/bin/systemctl --machine="${user}@.host" --user restart vicinae.service; fi; done'

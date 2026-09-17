@@ -1,5 +1,5 @@
 #!/bin/sh
-# Auto-start Hyprland on tty1 for the live session's root autologin.
+# Auto-start Hyprland on tty1 for the live session's slate-user autologin.
 #
 # Guarded so it only fires for an interactive login shell on tty1 with no
 # graphical session already running, and does nothing for other ttys, SSH
@@ -11,12 +11,7 @@
 # every Hyprland exit, which makes tty1's getty restart in a tight loop
 # and permanently die once systemd's start-limit is hit.
 #
-# --i-am-really-stupid: Hyprland refuses to start as root by default. The
-# live ISO, like upstream archiso's own baseline/releng profiles, only has
-# a root account (autologin, single ephemeral session, no other users) —
-# there is no non-root user to run it as. This flag is Hyprland's own
-# documented opt-out for exactly that single-user/root context; it is not
-# a workaround for a bug.
-if [ "$(tty)" = "/dev/tty1" ] && [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; then
-    Hyprland --i-am-really-stupid
+if [ "$(id -un)" = "slate" ] && [ "$(tty)" = "/dev/tty1" ] &&
+    [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; then
+    Hyprland
 fi

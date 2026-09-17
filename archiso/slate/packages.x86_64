@@ -9,14 +9,30 @@ hyprland
 xorg-xwayland
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
-foot
+ghostty
+ghostty-shell-integration
+ghostty-terminfo
 pipewire
 pipewire-pulse
 wireplumber
 
-# Without a font package foot (and any other Wayland client) cannot render
+# Slate's Vicinae launcher and its packaged defaults. These are resolved from
+# the local repository staged by `make package-repo`.
+vicinae-bin
+slate-launcher
+
+# Without a font package Ghostty (and any other Wayland client) cannot render
 # any text at all - confirmed by boot-testing, not a cosmetic nice-to-have.
+# ttf-jetbrains-mono-nerd is Ghostty's configured terminal font (ligatures +
+# Nerd Font glyphs); ttf-dejavu remains as a general-purpose fallback for
+# other apps that don't request a specific font.
 ttf-dejavu
+ttf-jetbrains-mono-nerd
+
+# Live environment and installation
+archinstall
+iwd
+sudo
 
 # Runtimes & tools
 bun

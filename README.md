@@ -18,15 +18,25 @@ convention (`packages/`) for custom Arch packages. No CI, linting, or tests yet 
 tooling is added incrementally as each piece proves it earns its keep.
 
 The ISO's desktop environment is [Hyprland](https://wiki.hyprland.org/), a
-Wayland compositor, kept intentionally minimal: it auto-starts on login with
-just a terminal (`foot`) bound, no launcher or bar — extras are added only
-when a concrete need justifies them.
+Wayland compositor, kept intentionally minimal: it auto-starts for the
+unprivileged `slate` live user with a terminal (`ghostty`) and
+[Vicinae](https://vicinae.com/) command palette. `Super+Space` opens the
+launcher for applications, commands, script commands, and extensions. Slate
+ships a dark theme and privacy-conscious defaults while keeping the user's
+Vicinae settings writable. The live user has passwordless `sudo` for
+installation and recovery, and `archinstall` is included for installing Arch
+to disk.
 
 ## Layout
 
 - `archiso/slate/` — archiso profile for Slate's x86_64 ISO. Build with
-  `make build` (wraps `mkarchiso -v -w work -o out archiso/slate`; requires
-  root and network access) and remove build artifacts with `make clean`.
+  `make build`; it first creates a local repository from Slate's packages and
+  then runs `mkarchiso` (requires root and network access). Remove build
+  artifacts with `make clean`.
 - `packages/` — custom Arch packages, one `PKGBUILD`-based directory per
-  package. See `packages/README.md` for the convention. Empty until a real
-  package is needed.
+  package. It currently contains the pinned Vicinae binary package and Slate's
+  launcher defaults. See `packages/README.md` for the convention.
+
+The launcher packages are ready for a future Slate installer to install with
+pacman, but the current unconfigured upstream `archinstall` flow does not yet
+provision Slate desktop packages or user settings onto an installed system.

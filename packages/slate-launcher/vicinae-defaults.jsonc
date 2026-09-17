@@ -1,0 +1,57 @@
+{
+  "$schema": "https://vicinae.com/schemas/config.json",
+
+  // This file contains Slate's package-owned defaults. Vicinae writes user
+  // changes to ~/.config/vicinae/settings.json, which takes precedence.
+  "telemetry": {
+    "system_info": false
+  },
+  "input_server": {
+    "enabled": false
+  },
+  "tray": {
+    "enabled": false
+  },
+  "favicon_service": "none",
+  "activate_on_single_click": true,
+  "escape_key_behavior": "close_window",
+  "close_on_focus_loss": true,
+  "pop_to_root_on_close": true,
+  "font": {
+    "normal": {
+      "family": "auto"
+    }
+  },
+  "theme": {
+    "light": {
+      "name": "slate",
+      "icon_theme": "Papirus-Dark"
+    },
+    "dark": {
+      "name": "slate",
+      "icon_theme": "Papirus-Dark"
+    }
+  },
+  "launcher_window": {
+    "opacity": 0.9,
+    "material": "blur",
+    "rounding": 18,
+    "size": {
+      "width": 820,
+      "height": 520
+    },
+    "client_side_decorations": {
+      "enabled": true,
+      "border_width": 1,
+      "shadow_size": 18
+    },
+    "compact_mode": {
+      "enabled": false
+    },
+    "layer_shell": {
+      "enabled": true,
+      "keyboard_interactivity": "on_demand",
+      "layer": "top"
+    }
+  }
+}

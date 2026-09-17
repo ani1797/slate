@@ -16,4 +16,15 @@ airootfs_image_tool_options=('-zlzma,109' -E 'ztailpacking')
 bootstrap_tarball_compression=(xz -9e)
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
+  ["/etc/subgid"]="0:0:644"
+  ["/etc/subuid"]="0:0:644"
+  ["/etc/sudoers.d/slate"]="0:0:440"
+  ["/home/slate"]="1000:1000:750"
+  ["/home/slate/.config"]="1000:1000:750"
+  ["/home/slate/.config/direnv"]="1000:1000:750"
+  ["/home/slate/.config/direnv/direnvrc"]="1000:1000:644"
+  ["/home/slate/.config/hypr"]="1000:1000:750"
+  ["/home/slate/.config/hypr/hyprland.conf"]="1000:1000:644"
+  ["/home/slate/.config/vicinae"]="1000:1000:750"
+  ["/home/slate/.config/vicinae/settings.json"]="1000:1000:644"
 )

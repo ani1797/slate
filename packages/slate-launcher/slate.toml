@@ -1,0 +1,79 @@
+[meta]
+version = 1
+name = "Slate"
+description = "Slate's dark, high-contrast command palette"
+variant = "dark"
+inherits = "vicinae-dark"
+
+[colors.core]
+accent = "#62E6FF"
+accent_foreground = "#05080D"
+background = "#0A0E16"
+foreground = "#F2F7FF"
+secondary_background = "#101827"
+border = "#263A52"
+
+[colors.main_window]
+border = "#3B6D8A"
+footer = { background = "#101827" }
+
+[colors.settings_window]
+border = "#3B6D8A"
+
+[colors.accents]
+blue = "#4CA6FF"
+green = "#56E39F"
+magenta = "#E879F9"
+orange = "#FF9F68"
+red = "#FF6B7A"
+yellow = "#F7D774"
+cyan = "#62E6FF"
+purple = "#A78BFA"
+
+[colors.shortcut]
+border = "#3B6D8A"
+
+[colors.text]
+default = "#F2F7FF"
+muted = "#9AABC0"
+danger = "#FF6B7A"
+success = "#56E39F"
+placeholder = "#71839B"
+selection = { background = "#62E6FF", foreground = "#05080D" }
+
+[colors.text.links]
+default = "#62E6FF"
+visited = "#C4A7FF"
+
+[colors.input]
+border = "#263A52"
+border_focus = "#62E6FF"
+border_error = "#FF6B7A"
+
+[colors.button.primary]
+background = "#162338"
+foreground = "#F2F7FF"
+hover = { background = "#203552" }
+focus = { outline = "#62E6FF" }
+
+[colors.list.item.hover]
+foreground = "#F2F7FF"
+secondary_foreground = "#C8D5E5"
+
+[colors.list.item.selection]
+background = "#19334A"
+foreground = "#FFFFFF"
+secondary_background = "#19334A"
+secondary_foreground = "#DCEBFA"
+
+[colors.grid.item]
+background = "#101827"
+hover = { outline = "#62E6FF" }
+selection = { outline = "#A78BFA" }
+
+[colors.scrollbars]
+background = "#3B6D8A"
+
+[colors.loading]
+bar = "#62E6FF"
+spinner = "#A78BFA"

@@ -1,0 +1,36 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-launcher
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate defaults and theme for the Vicinae launcher"
+arch=('any')
+url="https://github.com/anirudh/slate"
+license=('MIT')
+depends=(
+  papirus-icon-theme
+  vicinae
+)
+source=(
+  'settings.json'
+  'slate.toml'
+  'vicinae-defaults.jsonc'
+  'LICENSE'
+)
+sha256sums=(
+  'b4cd3cd147370a06ba6c6dea054c5aa9aaa3f9d06b26a63e7fd7c7812c596b64'
+  '4afa47247633c085c289c5437ae42e5a50da8dceb386b38368722716e8ca75d3'
+  'bd765238952b890be75ca39ad4ea44bd006afcb5f23b3ad5197976b5064696a2'
+  'a460c8efbbec00a0a48ddc11505d0a42b9f9ff6bf42569582ec9da064fca935c'
+)
+
+package() {
+  install -Dm644 settings.json \
+    "$pkgdir/etc/skel/.config/vicinae/settings.json"
+  install -Dm644 slate.toml \
+    "$pkgdir/usr/share/vicinae/themes/slate.toml"
+  install -Dm644 vicinae-defaults.jsonc \
+    "$pkgdir/usr/share/slate-launcher/vicinae-defaults.jsonc"
+  install -Dm644 LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
