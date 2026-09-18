@@ -19,7 +19,7 @@ tooling is added incrementally as each piece proves it earns its keep.
 
 The ISO's desktop environment is [Hyprland](https://wiki.hyprland.org/), a
 Wayland compositor, kept intentionally minimal: it is launched from a
-Slate-styled [tuigreet](https://github.com/tuigreet/tuigreet) login on tty1
+Slate-styled [tuigreet](https://github.com/apognu/tuigreet) login on tty1
 for the unprivileged `slate` live user with a terminal (`ghostty`) and
 [Vicinae](https://vicinae.com/) command palette. `Super+Space` opens the
 launcher for applications, commands, script commands, and extensions. Slate
