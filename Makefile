@@ -50,7 +50,7 @@ packages:
 			print "[slate]"; print "SigLevel = Required DatabaseRequired"; \
 			print "Server = file://" repo; print ""; added = 1 \
 		} { print }' "$(PROFILE)/pacman.conf" > "$(PACMAN_CONF)"
-	sudo mkarchroot -C "$(PACMAN_CONF)" "$(PACKAGE_BUILD_ROOT)" base-devel
+	sudo mkarchroot -C "$(PROFILE)/pacman.conf" "$(PACKAGE_BUILD_ROOT)" base-devel
 	@set -eu; \
 	for package in $(PACKAGES_TO_BUILD); do \
 		cd "$(abspath $(PACKAGE_DIR)/$$package)"; \
