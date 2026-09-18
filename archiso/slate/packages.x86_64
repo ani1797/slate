@@ -5,6 +5,8 @@ mkinitcpio-archiso
 syslinux
 
 # Desktop environment: Hyprland (Wayland compositor)
+greetd
+greetd-tuigreet
 hyprland
 xorg-xwayland
 xdg-desktop-portal

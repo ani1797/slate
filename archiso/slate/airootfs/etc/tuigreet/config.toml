@@ -1,0 +1,65 @@
+[display]
+show_time = true
+time_format = "%A, %d %B %Y · %H:%M"
+greeting = "Welcome to Slate"
+align_greeting = "center"
+issue = false
+
+[layout]
+width = 72
+window_padding = 2
+container_padding = 2
+prompt_padding = 1
+
+[layout.widgets]
+time_position = "top"
+status_position = "bottom"
+
+[user_menu]
+enabled = true
+min_uid = 1000
+max_uid = 1000
+
+[secret]
+mode = "characters"
+characters = "•"
+
+[keybindings]
+command = 2
+sessions = 3
+background = 4
+power = 12
+
+[background]
+kind = "matrix"
+fps = 24
+
+[background.matrix]
+head_color = "#E6FFFA"
+bright_color = "#22D3EE"
+dim_color = "#0F766E"
+min_length = 6
+max_length = 18
+min_speed = 0.25
+max_speed = 0.95
+mutate_chance = 0.02
+
+[session]
+sessions_dirs = ["/usr/share/wayland-sessions"]
+xsessions_dirs = []
+environments = []
+
+[power]
+use_setsid = true
+
+[theme]
+border = "cyan"
+text = "white"
+time = "cyan"
+container = "black"
+title = "cyan"
+greet = "bright-cyan"
+prompt = "bright-blue"
+input = "white"
+action = "bright-cyan"
+button = "bright-blue"
