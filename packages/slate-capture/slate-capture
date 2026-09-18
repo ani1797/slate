@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# slate-capture: screenshot and screen-recording dispatcher for Slate.
+#
+# Modular by design: each capture mode is a case branch inside
+# cmd_screenshot/cmd_record, not a separate script or hardcoded keybind.
+# Adding a new mode means adding a branch here — Hyprland just calls
+# `slate-capture <subcommand> <mode> [flags]`.
+set -euo pipefail
+
+SCREENSHOT_DIR="${SLATE_CAPTURE_SCREENSHOT_DIR:-$HOME/Pictures/Screenshots}"
+RECORDING_DIR="${SLATE_CAPTURE_RECORDING_DIR:-$HOME/Videos/Recordings}"
+RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+PID_FILE="$RUN_DIR/slate-capture-record.pid"
+PATH_FILE="$RUN_DIR/slate-capture-record.path"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  slate-capture screenshot <full|region|window> [--save] [--edit]
+  slate-capture record <toggle> <full|region>
+
+Screenshots default to clipboard-only. --save additionally writes a
+timestamped PNG to ~/Pictures/Screenshots. --edit opens the capture in
+swappy for annotation instead (mutually exclusive with --save).
+
+Recordings always save a timestamped .mp4 to ~/Videos/Recordings; there is
+no clipboard target for video.
+EOF
+}
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send -a "slate-capture" "$@" || true
+}
+
+timestamp() {
+  date +%Y%m%d-%H%M%S
+}
+
+active_window_geometry() {
+  hyprctl activewindow -j | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"'
+}
+
+cmd_screenshot() {
+  local mode="${1:-}"
+  shift || true
+  local save=false edit=false
+  for arg in "$@"; do
+    case "$arg" in
+      --save) save=true ;;
+      --edit) edit=true ;;
+      *)
+        echo "slate-capture: unknown flag '$arg'" >&2
+        usage >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  if $save && $edit; then
+    echo "slate-capture: --save and --edit are mutually exclusive" >&2
+    exit 1
+  fi
+
+  local geom_args=()
+  case "$mode" in
+    full) : ;;
+    region)
+      local geom
+      geom=$(slurp) || { notify "Screenshot" "Selection cancelled"; exit 0; }
+      geom_args=(-g "$geom")
+      ;;
+    window)
+      geom_args=(-g "$(active_window_geometry)")
+      ;;
+    *)
+      echo "slate-capture: unknown screenshot mode '$mode'" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+
+  if $edit; then
+    grim "${geom_args[@]}" - | swappy -f -
+    notify "Screenshot" "Opened in swappy"
+    return
+  fi
+
+  local tmpfile
+  tmpfile=$(mktemp --suffix=.png)
+  trap 'rm -f "$tmpfile"' EXIT
+
+  grim "${geom_args[@]}" "$tmpfile"
+  wl-copy < "$tmpfile"
+
+  if $save; then
+    mkdir -p "$SCREENSHOT_DIR"
+    local dest
+    dest="$SCREENSHOT_DIR/screenshot-$(timestamp).png"
+    cp "$tmpfile" "$dest"
+    notify "Screenshot" "Copied to clipboard and saved to $dest"
+  else
+    notify "Screenshot" "Copied to clipboard"
+  fi
+}
+
+record_is_running() {
+  [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+}
+
+start_recording() {
+  local mode="$1"
+  local geom_args=()
+  case "$mode" in
+    full) : ;;
+    region)
+      local geom
+      geom=$(slurp) || { notify "Recording" "Selection cancelled"; exit 0; }
+      geom_args=(-g "$geom")
+      ;;
+    *)
+      echo "slate-capture: unknown record mode '$mode'" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+
+  mkdir -p "$RECORDING_DIR"
+  local dest
+  dest="$RECORDING_DIR/recording-$(timestamp).mp4"
+
+  wf-recorder "${geom_args[@]}" -f "$dest" >/dev/null 2>&1 &
+  local pid=$!
+  echo "$pid" > "$PID_FILE"
+  echo "$dest" > "$PATH_FILE"
+  notify "Recording" "Started ($mode)"
+}
+
+stop_recording() {
+  local pid dest
+  pid=$(cat "$PID_FILE")
+  dest=$(cat "$PATH_FILE" 2>/dev/null || echo "unknown")
+
+  kill -INT "$pid" 2>/dev/null || true
+  # wf-recorder traps SIGINT to finalize the file; poll briefly for exit
+  # rather than `wait`, since pid isn't necessarily our direct child.
+  for _ in $(seq 1 50); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.1
+  done
+
+  rm -f "$PID_FILE" "$PATH_FILE"
+  notify "Recording" "Stopped — saved to $dest"
+}
+
+cmd_record() {
+  local action="${1:-}" mode="${2:-full}"
+  case "$action" in
+    toggle)
+      if record_is_running; then
+        stop_recording
+      else
+        start_recording "$mode"
+      fi
+      ;;
+    *)
+      echo "slate-capture: unknown record action '$action'" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main() {
+  local subcommand="${1:-}"
+  shift || true
+  case "$subcommand" in
+    screenshot) cmd_screenshot "$@" ;;
+    record) cmd_record "$@" ;;
+    -h|--help|help|"") usage ;;
+    *)
+      echo "slate-capture: unknown subcommand '$subcommand'" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

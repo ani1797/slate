@@ -21,6 +21,11 @@ wireplumber
 vicinae-bin
 slate-launcher
 
+# Slate's screenshot/recording tool and its dependencies (grim, slurp,
+# wf-recorder, swappy, wl-clipboard, mako, libnotify, jq) are resolved
+# transitively from PKGBUILD depends= and the local repository.
+slate-capture
+
 # Without a font package Ghostty (and any other Wayland client) cannot render
 # any text at all - confirmed by boot-testing, not a cosmetic nice-to-have.
 # ttf-jetbrains-mono-nerd is Ghostty's configured terminal font (ligatures +

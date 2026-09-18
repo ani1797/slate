@@ -1,0 +1,9 @@
+# Minimal default mako config for Slate.
+#
+# Functional defaults only — no theming beyond what's needed for capture
+# notifications to be legible. Extend when a concrete need shows up.
+
+max-visible=5
+default-timeout=4000
+layer=overlay
+anchor=top-right

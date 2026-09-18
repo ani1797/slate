@@ -1,0 +1,38 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-capture
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate's screenshot and screen-recording tool for Hyprland"
+arch=('any')
+url="https://github.com/anirudh/slate"
+license=('MIT')
+depends=(
+  grim
+  slurp
+  wf-recorder
+  swappy
+  wl-clipboard
+  mako
+  libnotify
+  jq
+)
+source=(
+  'slate-capture'
+  'mako-config'
+  'LICENSE'
+)
+sha256sums=(
+  '40b0abdab29897144b7b2add4e736259b50e641cad8c5ff6f4ae48d42835bec7'
+  '24eef7b5206c0a019890c3c88fcd96f09fb3aa6684257fa713baba3d02f043ee'
+  'a460c8efbbec00a0a48ddc11505d0a42b9f9ff6bf42569582ec9da064fca935c'
+)
+
+package() {
+  install -Dm755 slate-capture \
+    "$pkgdir/usr/bin/slate-capture"
+  install -Dm644 mako-config \
+    "$pkgdir/etc/skel/.config/mako/config"
+  install -Dm644 LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

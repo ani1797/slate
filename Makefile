@@ -7,7 +7,9 @@ PACKAGE_BUILD_DIR := $(abspath $(PACKAGE_WORK_DIR)/makepkg)
 PACKAGE_SOURCE_DIR := $(abspath $(PACKAGE_WORK_DIR)/sources)
 REPO_DIR := $(abspath $(PACKAGE_WORK_DIR)/repo)
 PACMAN_CONF := $(abspath $(PACKAGE_WORK_DIR)/pacman.conf)
-CUSTOM_PACKAGES := vicinae-bin slate-launcher
+# Every packages/<name>/ directory containing a PKGBUILD is built automatically
+# — no manual list to keep in sync when a package is added or removed.
+CUSTOM_PACKAGES := $(patsubst $(PACKAGE_DIR)/%/PKGBUILD,%,$(wildcard $(PACKAGE_DIR)/*/PKGBUILD))
 
 VM_DIR := .vm
 VM_VARS := $(VM_DIR)/OVMF_VARS.fd
