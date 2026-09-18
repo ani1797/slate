@@ -1,0 +1,14 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-desktop-defaults
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate desktop defaults for newly created users"
+arch=('any')
+url="https://github.com/anirudh/slate"
+license=('MIT')
+depends=('hyprland' 'ghostty')
+
+package() {
+  cp -a skel/. "$pkgdir/etc/skel/"
+}

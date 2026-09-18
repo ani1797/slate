@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Provision an already bootstrapped Arch target with Slate's shared system.
+set -euo pipefail
+
+readonly INSTALLER_DIR=/usr/share/slate/installer
+readonly SHARED_MANIFEST="$INSTALLER_DIR/packages.shared.x86_64"
+readonly SHARED_SERVICES="$INSTALLER_DIR/services.shared"
+readonly LOCAL_REPOSITORY=/usr/share/slate/repo
+readonly SIGNING_KEYRING=/usr/share/pacman/keyrings/slate.gpg
+
+usage() {
+    cat >&2 <<'EOF'
+Usage: slate-install TARGET USER
+
+TARGET must be the mount point of an Arch system created by archinstall or a
+manual installation. USER must already exist in TARGET. This command installs
+Slate's shared packages and applies Slate's user and container defaults.
+EOF
+    exit 2
+}
+
+fail() {
+    printf 'slate-install: %s\n' "$*" >&2
+    exit 1
+}
+
+copy_tree() {
+    local source=$1 destination=$2
+    [ -d "$source" ] || return 0
+    install -d "$destination"
+    cp -a "$source/." "$destination/"
+}
+
+[ "$#" -eq 2 ] || usage
+[ "$EUID" -eq 0 ] || fail "must run as root"
+
+target=$(readlink -f -- "$1")
+user=$2
+
+[ "$target" != / ] || fail "target must not be the running system root"
+[ -d "$target" ] || fail "target is not a directory: $target"
+[ -n "$(findmnt -rn --target "$target")" ] ||
+    fail "target is not a mounted filesystem: $target"
+[ -x "$target/usr/bin/pacman" ] || fail "target is not an Arch installation: $target"
+[[ "$user" =~ ^[a-z_][a-z0-9_-]*[$]?$ ]] || fail "invalid user name: $user"
+[ -r "$SHARED_MANIFEST" ] || fail "shared package manifest is missing"
+[ -r "$SHARED_SERVICES" ] || fail "shared service manifest is missing"
+[ -d "$LOCAL_REPOSITORY" ] || fail "bundled Slate repository is missing"
+[ -e "$LOCAL_REPOSITORY/slate.db" ] ||
+    fail "bundled Slate repository is missing its database"
+[ -r "$SIGNING_KEYRING" ] || fail "Slate signing key is missing"
+
+arch-chroot "$target" id -u "$user" >/dev/null ||
+    fail "user does not exist in target: $user"
+
+mapfile -t packages < <(
+    sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$SHARED_MANIFEST"
+)
+[ "${#packages[@]}" -gt 0 ] || fail "shared package manifest is empty"
+
+mapfile -t archives < <(
+    find "$LOCAL_REPOSITORY" -maxdepth 1 -type f -name '*.pkg.tar.*' -print | sort
+)
+[ "${#archives[@]}" -gt 0 ] || fail "bundled Slate repository contains no package archives"
+
+declare -A local_packages=()
+for archive in "${archives[@]}"; do
+    package=$(pacman -Qp --q "$archive") ||
+        fail "cannot read package archive: $archive"
+    local_packages["$package"]=1
+done
+
+official_packages=()
+local_manifest_packages=()
+for package in "${packages[@]}"; do
+    if [[ -v "local_packages[$package]" ]]; then
+        local_manifest_packages+=("$package")
+    else
+        official_packages+=("$package")
+    fi
+done
+[ "${#local_manifest_packages[@]}" -gt 0 ] ||
+    fail "bundled repository has none of the Slate packages in the shared manifest"
+
+printf 'Installing Slate packages into %s...\n' "$target"
+pacstrap -K "$target" "${official_packages[@]}"
+
+install -Dm644 "$SIGNING_KEYRING" \
+    "$target/usr/share/pacman/keyrings/slate.gpg"
+arch-chroot "$target" pacman-key --add /usr/share/pacman/keyrings/slate.gpg
+fingerprint=$(gpg --show-keys --with-colons "$SIGNING_KEYRING" |
+    awk -F: '$1 == "fpr" { print $10; exit }')
+[ -n "$fingerprint" ] || fail "cannot read Slate signing-key fingerprint"
+arch-chroot "$target" pacman-key --lsign-key "$fingerprint"
+
+readonly target_repository=/var/lib/slate-installer/repo
+readonly temporary_pacman_conf=/etc/pacman.d/slate-installer.conf
+install -d "$target$target_repository"
+cp -a "$LOCAL_REPOSITORY/." "$target$target_repository/"
+awk -v repo="$target_repository" '\
+    /^\[core\]$/ && !added { \
+        print "[slate]"; \
+        print "SigLevel = Required DatabaseRequired"; \
+        print "Server = file://" repo; \
+        print ""; \
+        added = 1; \
+    } \
+    { print } \
+    END { \
+        if (!added) { \
+            print ""; \
+            print "[slate]"; \
+            print "SigLevel = Required DatabaseRequired"; \
+            print "Server = file://" repo; \
+        } \
+    }' "$target/etc/pacman.conf" > "$target$temporary_pacman_conf"
+
+arch-chroot "$target" pacman --config "$temporary_pacman_conf" \
+    --noconfirm --needed -S "${packages[@]}"
+rm -rf -- "$target$target_repository" "$target$temporary_pacman_conf"
+
+for package in "${packages[@]}"; do
+    arch-chroot "$target" pacman -Q "$package" >/dev/null ||
+        fail "package was not installed: $package"
+done
+
+home=$(arch-chroot "$target" getent passwd "$user" | awk -F: 'NR == 1 { print $6 }')
+[[ "$home" = /* ]] || fail "cannot determine target home directory for: $user"
+target_home="$target$home"
+
+copy_tree /etc/skel "$target_home"
+copy_tree /home/slate/.config "$target_home/.config"
+install -D -m 0644 /etc/containers/registries.conf \
+    "$target/etc/containers/registries.conf"
+copy_tree /etc/systemd/network "$target/etc/systemd/network"
+copy_tree /etc/systemd/resolved.conf.d "$target/etc/systemd/resolved.conf.d"
+copy_tree /etc/systemd/system/systemd-networkd-wait-online.service.d \
+    "$target/etc/systemd/system/systemd-networkd-wait-online.service.d"
+install -Dm644 /etc/profile.d/direnv.sh "$target/etc/profile.d/direnv.sh"
+printf '%s ALL=(ALL:ALL) ALL\n' "$user" > "$target/etc/sudoers.d/$user"
+chmod 0440 "$target/etc/sudoers.d/$user"
+if ! grep -q "^$user:" "$target/etc/subuid"; then
+    arch-chroot "$target" usermod --add-subuids 100000-165535 \
+        --add-subgids 100000-165535 "$user"
+fi
+
+mapfile -t services < <(
+    sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$SHARED_SERVICES"
+)
+for service in "${services[@]}"; do
+    arch-chroot "$target" systemctl enable "$service"
+done
+arch-chroot "$target" chown -R "$user:$user" "$home/.config"
+
+printf 'Slate provisioning complete for %s.\n' "$user"

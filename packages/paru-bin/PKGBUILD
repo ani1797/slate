@@ -1,0 +1,23 @@
+# Maintainer: Slate contributors
+
+pkgname=paru-bin
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="Feature packed AUR helper"
+arch=('x86_64')
+url="https://github.com/Morganamilo/paru"
+license=('MIT')
+provides=('paru')
+conflicts=('paru')
+makedepends=('cargo')
+source=("paru-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=(
+  'eea4dbb524db765d5316f540f9ee670c0bf81aae4827b5417eebb4c9b5651727'
+)
+build() {
+  cd "paru-${pkgver}"
+  cargo build --release --locked
+}
+package() {
+  install -Dm755 "paru-${pkgver}/target/release/paru" "$pkgdir/usr/bin/paru"
+}

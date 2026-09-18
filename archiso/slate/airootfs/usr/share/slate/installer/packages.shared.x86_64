@@ -1,0 +1,45 @@
+# Packages installed both in the live image and on a Slate system.
+base
+linux
+linux-firmware
+mkinitcpio
+
+# Desktop
+hyprland
+xorg-xwayland
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+ghostty
+ghostty-shell-integration
+ghostty-terminfo
+pipewire
+pipewire-pulse
+wireplumber
+ttf-dejavu
+ttf-jetbrains-mono-nerd
+
+# Slate packages from the ISO's bundled local repository.
+vicinae-bin
+slate-launcher
+slate-capture
+slate-desktop-defaults
+paru-bin
+
+# Network and privilege management
+iwd
+sudo
+
+# Agent development environment
+bun
+direnv
+go
+nodejs
+rust
+uv
+
+# Containers
+aardvark-dns
+netavark
+podman
+podman-compose
+podman-docker

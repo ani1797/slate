@@ -1,0 +1,5 @@
+# Packages required only to boot or install from the live image.
+mkinitcpio-archiso
+syslinux
+archinstall
+fuse-overlayfs

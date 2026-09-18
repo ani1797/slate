@@ -19,6 +19,7 @@ file_permissions=(
   ["/etc/subgid"]="0:0:644"
   ["/etc/subuid"]="0:0:644"
   ["/etc/sudoers.d/slate"]="0:0:440"
+  ["/usr/local/bin/slate-install"]="0:0:755"
   ["/home/slate"]="1000:1000:750"
   ["/home/slate/.config"]="1000:1000:750"
   ["/home/slate/.config/direnv"]="1000:1000:750"

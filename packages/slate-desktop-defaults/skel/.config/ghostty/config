@@ -1,0 +1,21 @@
+# Slate's default Ghostty config.
+#
+# GPU acceleration is automatic (Ghostty always renders via the platform's
+# GPU API) - no configuration needed here for that.
+
+# The "Mono" variant keeps icon glyphs cell-width-aligned, which matters
+# for a terminal (the plain Nerd Font variant is meant for UI text).
+font-family = JetBrainsMono Nerd Font Mono
+font-size = 12
+
+# Ligatures (calt/liga/dlig) are enabled by default in Ghostty; no explicit
+# config is needed as long as the font supports them.
+
+window-padding-x = 8
+window-padding-y = 6
+
+cursor-style = block
+
+# Retheming: swap the file below for a different palette/config to change
+# Slate's terminal theme without touching the rest of this config.
+config-file = theme-slate.conf

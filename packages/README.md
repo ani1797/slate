@@ -20,8 +20,9 @@ packages/
   it references (patches, `.install` scripts, etc.).
 - No custom packaging format or build wrapper — packages are built the
   standard way with `makepkg`.
-- Binary repackaging must pin an upstream release and checksum. ISO builds
-  never consume the AUR directly.
+- Third-party software, including AUR software, is packaged locally from a
+  pinned upstream source and verified checksum. ISO builds never invoke an AUR
+  helper or consume the AUR directly.
 - Package-owned defaults belong under `/usr/share` or `/etc/skel`; do not
   overwrite mutable files in existing users' home directories.
 
@@ -39,7 +40,14 @@ and stage the local repository used by archiso:
 make package-repo
 ```
 
-`make build` runs this step automatically, generates a build-specific pacman
-configuration pointing at `.build/repo`, and passes that configuration to
-`mkarchiso`. Package and repository artifacts live under `.build/` and are
-removed by `make clean`.
+Release builds require Arch's `devtools` and a local GPG signing key:
+
+```sh
+make build SIGNING_KEY=<fingerprint-or-key-id>
+```
+
+Packages are built with `makechrootpkg` in a clean `mkarchroot` build root as
+an unprivileged build user. Artifacts and the local `slate` repository database
+are signed, then bundled in the ISO for `slate-install`; the ISO build uses the
+exported public key to verify that repository. Package, chroot, keyring, source,
+and repository artifacts live under `.build/` and are removed by `make clean`.
