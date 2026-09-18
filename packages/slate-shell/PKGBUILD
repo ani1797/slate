@@ -1,0 +1,41 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-shell
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate's default Hyprland, ghostty, and direnv configuration"
+arch=('any')
+url="https://github.com/anirudh/slate"
+license=('MIT')
+depends=(
+  hyprland
+  ghostty
+  direnv
+)
+source=(
+  'hyprland.conf'
+  'ghostty-config'
+  'theme-slate.conf'
+  'direnvrc'
+  'LICENSE'
+)
+sha256sums=(
+  'a6db44d3a37e068cfb3c0ba7823908197f75bcfb923d9b5bf4aede4c4b764820'
+  '5782e87c06fd9ab04eff7e7510adadaef6a9d41889f6ba99e6a1a7c1271f2746'
+  'cce707ab7dc0f423ce440bef611b97803ddb4d02d98bc9194919bde5fb33c541'
+  'b8481a68af7a85e766c0c788e9a8ee1386c18de45fdbe9fa41ab50ebdc98b9ec'
+  'a460c8efbbec00a0a48ddc11505d0a42b9f9ff6bf42569582ec9da064fca935c'
+)
+
+package() {
+  install -Dm644 hyprland.conf \
+    "$pkgdir/etc/skel/.config/hypr/hyprland.conf"
+  install -Dm644 ghostty-config \
+    "$pkgdir/etc/skel/.config/ghostty/config"
+  install -Dm644 theme-slate.conf \
+    "$pkgdir/etc/skel/.config/ghostty/theme-slate.conf"
+  install -Dm644 direnvrc \
+    "$pkgdir/etc/skel/.config/direnv/direnvrc"
+  install -Dm644 LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

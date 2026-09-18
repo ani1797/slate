@@ -2,3 +2,13 @@
 /out/
 /work/
 /.vm/
+
+# makepkg build artifacts left in package source directories
+packages/*/pkg/
+packages/*/src/
+packages/*/*.pkg.tar.*
+packages/*/*.tar.gz
+packages/*/*.tar.xz
+# Generated: the local package repo staged into the ISO by `make build`
+# (see Makefile's STAGED_REPO_DIR and airootfs/etc/pacman.conf's [slate] entry).
+/archiso/slate/airootfs/opt/slate-repo/

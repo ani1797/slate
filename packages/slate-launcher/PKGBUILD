@@ -15,12 +15,14 @@ source=(
   'settings.json'
   'slate.toml'
   'vicinae-defaults.jsonc'
+  'onboarding.json'
   'LICENSE'
 )
 sha256sums=(
   'b4cd3cd147370a06ba6c6dea054c5aa9aaa3f9d06b26a63e7fd7c7812c596b64'
   '4afa47247633c085c289c5437ae42e5a50da8dceb386b38368722716e8ca75d3'
   'bd765238952b890be75ca39ad4ea44bd006afcb5f23b3ad5197976b5064696a2'
+  'cd6a9be07112ed2c277c695e07345de43b94aa2702ca57c268dbcfdf7982fdfc'
   'a460c8efbbec00a0a48ddc11505d0a42b9f9ff6bf42569582ec9da064fca935c'
 )
 
@@ -31,6 +33,12 @@ package() {
     "$pkgdir/usr/share/vicinae/themes/slate.toml"
   install -Dm644 vicinae-defaults.jsonc \
     "$pkgdir/usr/share/slate-launcher/vicinae-defaults.jsonc"
+  # Pre-seed Vicinae's onboarding state as already-completed so new users
+  # land straight in the launcher instead of the first-run setup wizard.
+  # See https://github.com/vicinaehq/vicinae onboarding-window.cpp for the
+  # state file format ($XDG_STATE_HOME/vicinae/onboarding.json).
+  install -Dm644 onboarding.json \
+    "$pkgdir/etc/skel/.local/state/vicinae/onboarding.json"
   install -Dm644 LICENSE \
     "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

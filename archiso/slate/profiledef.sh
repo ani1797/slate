@@ -19,12 +19,4 @@ file_permissions=(
   ["/etc/subgid"]="0:0:644"
   ["/etc/subuid"]="0:0:644"
   ["/etc/sudoers.d/slate"]="0:0:440"
-  ["/home/slate"]="1000:1000:750"
-  ["/home/slate/.config"]="1000:1000:750"
-  ["/home/slate/.config/direnv"]="1000:1000:750"
-  ["/home/slate/.config/direnv/direnvrc"]="1000:1000:644"
-  ["/home/slate/.config/hypr"]="1000:1000:750"
-  ["/home/slate/.config/hypr/hyprland.conf"]="1000:1000:644"
-  ["/home/slate/.config/vicinae"]="1000:1000:750"
-  ["/home/slate/.config/vicinae/settings.json"]="1000:1000:644"
 )

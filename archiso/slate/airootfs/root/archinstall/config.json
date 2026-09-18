@@ -1,0 +1,60 @@
+{
+  "audio_config": {
+    "audio": "pipewire"
+  },
+  "kernels": [
+    "linux"
+  ],
+  "mirror_config": {
+    "custom_repositories": [
+      {
+        "name": "slate",
+        "url": "file:///opt/slate-repo",
+        "sign_check": "Optional",
+        "sign_option": "TrustAll"
+      }
+    ]
+  },
+  "network_config": {
+    "type": "iso"
+  },
+  "ntp": true,
+  "timezone": "America/Toronto",
+  "packages": [
+    "hyprland",
+    "xorg-xwayland",
+    "xdg-desktop-portal",
+    "xdg-desktop-portal-hyprland",
+    "ghostty",
+    "ghostty-shell-integration",
+    "ghostty-terminfo",
+    "slate-shell",
+    "vicinae-bin",
+    "slate-launcher",
+    "slate-capture",
+    "paru",
+    "ttf-dejavu",
+    "ttf-jetbrains-mono-nerd",
+    "iwd",
+    "bun",
+    "direnv",
+    "go",
+    "nodejs",
+    "rust",
+    "uv",
+    "aardvark-dns",
+    "netavark",
+    "podman",
+    "podman-compose",
+    "podman-docker",
+    "greetd",
+    "greetd-tuigreet"
+  ],
+  "services": [
+    "greetd"
+  ],
+  "custom_commands": [
+    "cat <<'EOF' > /etc/greetd/config.toml\n[terminal]\nvt = 1\n\n[default_session]\ncommand = \"tuigreet --remember --remember-session --time --sessions /usr/share/wayland-sessions\"\nuser = \"greeter\"\nEOF\n",
+    "for home in /home/*; do\n  user=$(basename \"$home\")\n  if id \"$user\" >/dev/null 2>&1; then\n    cp -rn /etc/skel/. \"$home\"/\n    chown -R \"$user\":\"$user\" \"$home\"\n  fi\ndone\n"
+  ]
+}

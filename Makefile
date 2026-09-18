@@ -7,6 +7,10 @@ PACKAGE_BUILD_DIR := $(abspath $(PACKAGE_WORK_DIR)/makepkg)
 PACKAGE_SOURCE_DIR := $(abspath $(PACKAGE_WORK_DIR)/sources)
 REPO_DIR := $(abspath $(PACKAGE_WORK_DIR)/repo)
 PACMAN_CONF := $(abspath $(PACKAGE_WORK_DIR)/pacman.conf)
+# Staged copy of REPO_DIR baked into the ISO itself (see airootfs/etc/pacman.conf's
+# [slate] repo entry) so the local repo is reachable at live-runtime and by
+# archinstall's pacstrap when installing to disk, not just during the build.
+STAGED_REPO_DIR := $(PROFILE)/airootfs/opt/slate-repo
 # Every packages/<name>/ directory containing a PKGBUILD is built automatically
 # — no manual list to keep in sync when a package is added or removed.
 CUSTOM_PACKAGES := $(patsubst $(PACKAGE_DIR)/%/PKGBUILD,%,$(wildcard $(PACKAGE_DIR)/*/PKGBUILD))
@@ -22,6 +26,9 @@ OVMF_VARS_TEMPLATE := /usr/share/edk2-ovmf/x64/OVMF_VARS.4m.fd
 
 build: package-repo
 	@$(MAKE) --no-print-directory clean-iso
+	@rm -rf -- "$(STAGED_REPO_DIR)"
+	@mkdir -p "$(STAGED_REPO_DIR)"
+	@cp -a -- "$(REPO_DIR)"/. "$(STAGED_REPO_DIR)"/
 	sudo mkarchiso -v -C "$(PACMAN_CONF)" -w "$(WORK_DIR)" -o "$(OUT_DIR)" "$(PROFILE)"
 
 packages:
@@ -63,7 +70,7 @@ clean-iso:
 	sudo rm -rf -- "$(WORK_DIR)" "$(OUT_DIR)"
 
 clean: clean-iso
-	@rm -rf -- "$(PACKAGE_WORK_DIR)"
+	@rm -rf -- "$(PACKAGE_WORK_DIR)" "$(STAGED_REPO_DIR)"
 
 start:
 	@iso="$$(ls -t $(OUT_DIR)/*.iso 2>/dev/null | head -n1)"; \

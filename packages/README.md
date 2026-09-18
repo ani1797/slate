@@ -7,7 +7,10 @@ per package:
 packages/
 ├── <pkgname>/
 │   └── PKGBUILD
+├── paru/
+├── slate-capture/
 ├── slate-launcher/
+├── slate-shell/
 └── vicinae-bin/
 ```
 

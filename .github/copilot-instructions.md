@@ -15,10 +15,15 @@ archiso/slate/    Arch's archiso profile for Slate's live/install ISO (x86_64).
                    Based on archiso's upstream "baseline" profile
                    (/usr/share/archiso/configs/baseline), trimmed to the packages
                    and config actually needed. See profiledef.sh for ISO metadata
-                   and boot modes, packages.x86_64 for the installed package set.
+                   and boot modes, packages.x86_64 for the installed package set,
+                   and airootfs/root/archinstall/ for the config-driven disk
+                   install (README.md there explains it).
 packages/         Custom Arch packages, one PKGBUILD-based directory per package.
                    See packages/README.md for the convention. The ISO build
-                   stages these packages into a local pacman repository.
+                   stages these packages into a local pacman repository, which
+                   `make build` also bakes into the ISO itself
+                   (airootfs/opt/slate-repo, gitignored) so archinstall's
+                   pacstrap can resolve them when installing to disk.
 ```
 
 ## Build commands
@@ -28,8 +33,12 @@ packages/         Custom Arch packages, one PKGBUILD-based directory per package
 - Build the ISO: `make build` (requires root, network access to fetch packages,
   and `grub` installed on the build host — needed by mkarchiso to
   validate/build the `uefi.grub` boot mode even though grub itself isn't part
-  of the ISO's package list).
+  of the ISO's package list). This also stages the local package repo into
+  `archiso/slate/airootfs/opt/slate-repo` before invoking `mkarchiso`.
 - Build a package: `cd packages/<pkgname> && makepkg -si`.
+- Install Slate to disk from the booted live ISO: `sudo archinstall --config
+  /root/archinstall/config.json` — see
+  `archiso/slate/airootfs/root/archinstall/README.md`.
 
 When you add real build steps, lint tooling, or tests beyond the above, **update
 this file** with the actual commands (including how to run a single test) and

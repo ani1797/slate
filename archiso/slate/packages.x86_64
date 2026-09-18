@@ -16,6 +16,11 @@ pipewire
 pipewire-pulse
 wireplumber
 
+# Slate's default Hyprland/ghostty/direnv configuration (packaged so it also
+# lands via pacstrap when installing to disk, not just on the live ISO).
+# Resolved from the local repository staged by `make package-repo`.
+slate-shell
+
 # Slate's Vicinae launcher and its packaged defaults. These are resolved from
 # the local repository staged by `make package-repo`.
 vicinae-bin
@@ -25,6 +30,10 @@ slate-launcher
 # wf-recorder, swappy, wl-clipboard, mako, libnotify, jq) are resolved
 # transitively from PKGBUILD depends= and the local repository.
 slate-capture
+
+# paru: AUR helper, built from source and resolved from the local
+# repository staged by `make package-repo` (paru isn't in [core]/[extra]).
+paru
 
 # Without a font package Ghostty (and any other Wayland client) cannot render
 # any text at all - confirmed by boot-testing, not a cosmetic nice-to-have.
