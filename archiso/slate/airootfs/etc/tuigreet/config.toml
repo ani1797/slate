@@ -35,10 +35,12 @@ power = 12
 kind = "matrix"
 fps = 24
 
+# Match Slate's shared dark palette from Ghostty/Vicinae: cyan accent over the
+# same deep blue-black base, kept below 30 FPS so the greeter stays lightweight.
 [background.matrix]
-head_color = "#E6FFFA"
-bright_color = "#22D3EE"
-dim_color = "#0F766E"
+head_color = "#F2F7FF"
+bright_color = "#62E6FF"
+dim_color = "#263A52"
 min_length = 6
 max_length = 18
 min_speed = 0.25
@@ -54,6 +56,8 @@ environments = []
 use_setsid = true
 
 [theme]
+# ANSI names are resolved through the active terminal palette, which is Slate's
+# Ghostty-compatible palette on the live ISO.
 border = "cyan"
 text = "white"
 time = "cyan"
