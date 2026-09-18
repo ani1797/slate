@@ -1,5 +1,5 @@
 [Desktop Entry]
 Name=Slate
 Comment=Slate Hyprland session
-Exec=Hyprland
+Exec=/usr/local/bin/slate-session
 Type=Application
