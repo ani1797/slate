@@ -65,6 +65,23 @@ jobs:
           fpr=$(sudo -u builder gpg --homedir /home/builder/.gnupg --with-colons --list-secret-keys --fingerprint | awk -F: '$1 == "fpr" { print $10; exit }')
           echo "gpg_fpr=$fpr" >> "$GITHUB_ENV"
 
+      - name: Configure a build-time local repo
+        # makepkg --syncdeps needs to resolve Slate's own intra-repo
+        # dependencies (e.g. slate-capture -> slate-base -> slate-keyring)
+        # as the very same run builds them, not just upstream Arch packages
+        # -- there is nowhere else it could find them. Point a throwaway
+        # [slate-local] repo at the same directory the Makefile's `packages`
+        # target builds into; that target refreshes it after every package
+        # once it sees MAKEPKG_DEPS_FLAG=--syncdeps, so each later package's
+        # depends= on an earlier one resolves locally instead of failing
+        # with "target not found".
+        run: |
+          repo_dir="$GITHUB_WORKSPACE/.build/repo"
+          sudo -u builder mkdir -p "$repo_dir"
+          sudo -u builder repo-add --quiet "$repo_dir/slate.db.tar.gz"
+          printf '\n[slate-local]\nSigLevel = Never\nServer = file://%s\n' "$repo_dir" >> /etc/pacman.conf
+          pacman -Sy --noconfirm
+
       - name: make check-packages package-repo
         env:
           # See Makefile's comment on MAKEPKG_DEPS_FLAG: this container is

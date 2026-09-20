@@ -14,7 +14,13 @@ PACMAN_CONF := $(abspath $(PACKAGE_WORK_DIR)/pacman.conf)
 STAGED_REPO_DIR := $(PROFILE)/airootfs/var/cache/slate/repo
 # Every directory under packages/ containing a PKGBUILD is built automatically,
 # at any tier depth (meta/, bundles/, vendor/) — no manual list to keep in sync.
-PACKAGE_DIRS := $(shell find $(PACKAGE_DIR) -mindepth 2 -name PKGBUILD -printf '%h\n' | sort)
+# Built in tier order (vendor, bundles, meta), not plain alphabetical: that is
+# also the dependency direction (vendor packages carry no Slate-internal
+# depends=; a bundle may depend on a vendor package, e.g. slate-base on
+# slate-keyring; meta depends= every bundle). This matters once
+# MAKEPKG_DEPS_FLAG=--syncdeps (CI) needs an earlier-built package's own repo
+# entry to already exist to satisfy a later package's depends=.
+PACKAGE_DIRS := $(shell for tier in vendor bundles meta; do find $(PACKAGE_DIR)/$$tier -mindepth 1 -name PKGBUILD -printf '%h\n' 2>/dev/null | sort; done)
 # --nodeps by default: a developer's own machine already carries the tools
 # these packages build with, and `packages` must never reach for pacman to
 # install things onto it as a side effect. CI runs in a disposable container
@@ -96,6 +102,10 @@ packages: check-packages
 		BUILDDIR="$(PACKAGE_BUILD_DIR)" \
 		makepkg --dir "$$dir" \
 			--cleanbuild --clean --force $(MAKEPKG_DEPS_FLAG) $(MAKEPKG_SIGN_FLAG) --noconfirm; \
+		if [ "$(MAKEPKG_DEPS_FLAG)" = "--syncdeps" ]; then \
+			repo-add --quiet $(REPO_ADD_SIGN_FLAG) "$(REPO_DIR)/slate.db.tar.gz" "$(REPO_DIR)"/*.pkg.tar.zst; \
+			sudo pacman -Sy --noconfirm; \
+		fi; \
 	done
 
 package-repo: packages
