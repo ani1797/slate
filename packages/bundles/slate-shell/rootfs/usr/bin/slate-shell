@@ -1,0 +1,13 @@
+#!/bin/sh
+# Start the account's configured shell as a login shell.
+#
+# Ghostty uses this launcher so /etc/profile.d is consistently loaded on
+# Linux, regardless of whether the account's shell is bash or zsh.
+
+shell=$(getent passwd "$(id -un)" | cut -d: -f7)
+if [ -z "$shell" ] || [ ! -x "$shell" ]; then
+    printf 'slate-shell: configured login shell is unavailable: %s\n' "${shell:-<unset>}" >&2
+    exit 1
+fi
+
+exec "$shell" -l

@@ -20,7 +20,8 @@ everything else is `slate-doctor` plus the VM gates below, both of which ship as
 product rather than as test scaffolding.
 
 The desktop is [Hyprland](https://wiki.hyprland.org/), kept intentionally
-minimal: a terminal (`ghostty`) and the [Vicinae](https://vicinae.com/) command
+minimal: Ghostty renders the terminal while zellij provides its always-on,
+persistent tabs and splits, alongside the [Vicinae](https://vicinae.com/) command
 palette on `Super+Space`, with a dark theme and privacy-conscious defaults.
 
 ## The core idea

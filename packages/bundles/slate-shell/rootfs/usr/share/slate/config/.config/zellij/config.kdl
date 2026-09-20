@@ -1,0 +1,90 @@
+// Slate uses Ghostty for rendering and zellij for all terminal surfaces.
+// Every pane and tab therefore lives in the persistent session.
+
+default_shell "/usr/bin/slate-shell"
+default_layout "compact"
+default_mode "locked"
+pane_frames false
+
+// Keep the session server alive when its Ghostty client closes. Serialization
+// additionally lets zellij resurrect the layout, commands and working dirs
+// after a reboot.
+on_force_close "detach"
+session_serialization true
+serialize_pane_viewport true
+scrollback_lines_to_serialize 10000
+support_kitty_keyboard_protocol true
+
+// Direct Ctrl+Shift shortcuts avoid zellij's default Ctrl+N/P/O/S collisions
+// with bash and zsh readline. Ctrl+G unlocks the full mode-based controls.
+keybinds clear-defaults=true {
+    locked {
+        bind "Ctrl g" { SwitchToMode "Normal"; }
+        bind "Ctrl Shift o" { NewPane "Right"; }
+        bind "Ctrl Shift e" { NewPane "Down"; }
+        bind "Ctrl Shift t" { NewTab; }
+        bind "Ctrl Shift w" { CloseFocus; }
+        bind "Ctrl Shift Enter" { ToggleFocusFullscreen; }
+        bind "Ctrl Shift Left" { MoveFocus "Left"; }
+        bind "Ctrl Shift Right" { MoveFocus "Right"; }
+        bind "Ctrl Shift Up" { MoveFocus "Up"; }
+        bind "Ctrl Shift Down" { MoveFocus "Down"; }
+        bind "Ctrl Shift d" { Detach; }
+    }
+
+    normal {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "p" { SwitchToMode "Pane"; }
+        bind "r" { SwitchToMode "Resize"; }
+        bind "t" { SwitchToMode "Tab"; }
+        bind "s" { SwitchToMode "Scroll"; }
+        bind "d" { Detach; }
+        bind "q" { Quit; }
+    }
+
+    pane {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "h" "Left" { MoveFocus "Left"; }
+        bind "j" "Down" { MoveFocus "Down"; }
+        bind "k" "Up" { MoveFocus "Up"; }
+        bind "l" "Right" { MoveFocus "Right"; }
+        bind "n" { NewPane; SwitchToMode "Normal"; }
+        bind "d" { NewPane "Down"; SwitchToMode "Normal"; }
+        bind "r" { NewPane "Right"; SwitchToMode "Normal"; }
+        bind "x" { CloseTab; SwitchToMode "Normal"; }
+        bind "f" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
+    }
+
+    resize {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "h" "Left" { Resize "Left"; }
+        bind "j" "Down" { Resize "Down"; }
+        bind "k" "Up" { Resize "Up"; }
+        bind "l" "Right" { Resize "Right"; }
+        bind "+" "=" { Resize "Increase"; }
+        bind "-" { Resize "Decrease"; }
+    }
+
+    tab {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "h" "Left" { GoToPreviousTab; }
+        bind "l" "Right" { GoToNextTab; }
+        bind "n" { NewTab; SwitchToMode "Normal"; }
+        bind "x" { CloseFocus; SwitchToMode "Normal"; }
+        bind "r" { SwitchToMode "RenameTab"; }
+    }
+
+    scroll {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "j" "Down" { ScrollDown; }
+        bind "k" "Up" { ScrollUp; }
+        bind "d" { HalfPageScrollDown; }
+        bind "u" { HalfPageScrollUp; }
+        bind "q" "Esc" { SwitchToMode "Normal"; }
+    }
+
+    renametab {
+        bind "Ctrl c" "Esc" { SwitchToMode "Tab"; }
+        bind "Enter" { SwitchToMode "Tab"; }
+    }
+}

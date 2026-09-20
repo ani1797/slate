@@ -2,8 +2,8 @@
 
 pkgname=slate-shell
 pkgver=1.0.0
-pkgrel=2
-pkgdesc="Slate's terminal and shell environment: ghostty and direnv defaults"
+pkgrel=3
+pkgdesc="Slate's terminal and shell environment: Ghostty, zellij, bash and zsh"
 arch=('any')
 url="https://github.com/ani1797/slate"
 license=('MIT')
@@ -13,6 +13,10 @@ depends=(
   ghostty-shell-integration
   ghostty-terminfo
   direnv
+  zellij
+  zsh
+  zsh-completions
+  grml-zsh-config
 )
 # Configuration is authored as a filesystem tree under rootfs/ rather than as
 # individual source entries, so adding a file needs no PKGBUILD or checksum edit.

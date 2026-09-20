@@ -16,6 +16,21 @@ window-padding-y = 6
 
 cursor-style = block
 
+# Ghostty is the renderer; zellij owns tabs, splits, focus, zoom and persistence.
+# Release these shortcuts so zellij receives them instead of Ghostty handling
+# them first. Ghostty's window-save-state is macOS-only and is ignored on
+# Linux/GTK; zellij is Slate's session-resume layer.
+command = /usr/bin/slate-shell
+keybind = ctrl+shift+o=unbind
+keybind = ctrl+shift+e=unbind
+keybind = ctrl+shift+t=unbind
+keybind = ctrl+shift+w=unbind
+keybind = ctrl+shift+enter=unbind
+keybind = ctrl+shift+left=unbind
+keybind = ctrl+shift+right=unbind
+keybind = ctrl+shift+up=unbind
+keybind = ctrl+shift+down=unbind
+
 # Retheming: swap the file below for a different palette/config to change
 # Slate's terminal theme without touching the rest of this config.
 config-file = theme-slate.conf
