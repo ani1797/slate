@@ -1,0 +1,33 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-shell
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="Slate's terminal and shell environment: ghostty and direnv defaults"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=(
+  slate-base
+  ghostty
+  ghostty-shell-integration
+  ghostty-terminfo
+  direnv
+)
+# Configuration is authored as a filesystem tree under rootfs/ rather than as
+# individual source entries, so adding a file needs no PKGBUILD or checksum edit.
+source=()
+sha256sums=()
+
+package() {
+  cp -a "$startdir/rootfs/." "$pkgdir/"
+
+  # /etc/skel seeds accounts created after this package is installed; the copy
+  # under /usr/share/slate/config is the pristine one slate-refresh-config
+  # re-seeds from for accounts that already existed. Authoring the tree once and
+  # mirroring it here is what keeps the two from drifting apart.
+  if [ -d "$pkgdir/usr/share/slate/config" ]; then
+    install -d "$pkgdir/etc/skel"
+    cp -a "$pkgdir/usr/share/slate/config/." "$pkgdir/etc/skel/"
+  fi
+}

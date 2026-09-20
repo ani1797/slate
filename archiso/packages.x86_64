@@ -1,0 +1,22 @@
+# The live image's package list.
+#
+# Everything Slate actually *is* comes from the slate-live meta-package, which
+# depends on the slate meta-package, which depends on the bundles. That is the
+# single definition of Slate's package set: archinstall's config.json resolves
+# through the same metas, so the live image and an installed system cannot drift
+# apart. Adding a tool to Slate means editing one depends= line in
+# packages/meta/ or packages/bundles/, never this file.
+#
+# What remains here is only what archiso itself requires to produce a bootable
+# image, plus the meta-package.
+
+# Required by archiso to build and boot the live medium
+base
+linux
+mkinitcpio
+mkinitcpio-archiso
+syslinux
+
+# Slate, plus the live-only installation tooling. Resolved from the local
+# repository staged by `make package-repo`.
+slate-live

@@ -1,6 +1,0 @@
-{
-  "$schema": "https://vicinae.com/schemas/config.json",
-  "imports": [
-    "/usr/share/slate-launcher/vicinae-defaults.jsonc"
-  ]
-}

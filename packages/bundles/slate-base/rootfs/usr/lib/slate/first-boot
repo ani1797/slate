@@ -1,0 +1,114 @@
+#!/bin/bash
+# Slate first-boot provisioning.
+#
+# Runs once, on the first boot of an installed system, to finish the work that
+# cannot happen during packaging:
+#
+#   1. Replace /etc/pacman.conf with Slate's own. archinstall appends its
+#      custom_repositories entry verbatim to the target's pacman.conf, which
+#      leaves behind a file:// repository that only ever existed on the install
+#      media — the first `pacman -Syu` after reboot would fail on it. The
+#      package cannot simply own /etc/pacman.conf, because the pacman package
+#      already does and two owners are a file conflict that fails pacstrap.
+#
+#   2. Allocate subordinate UID/GID ranges so rootless podman works. /etc/subuid
+#      and /etc/subgid are owned by the filesystem package, so again no Slate
+#      package may ship them.
+#
+#   3. Seed Slate's default dotfiles into user homes. archinstall creates the
+#      user account before installing packages, so /etc/skel was still empty
+#      when the home directory was created.
+#
+# Guarded by a stamp file rather than ConditionFirstBoot=yes: machine-id is
+# frequently already initialised by pacstrap, which would make ConditionFirstBoot
+# silently never fire.
+
+set -uo pipefail
+
+STAMP=/var/lib/slate/first-boot-done
+PACMAN_CONF_SOURCE=/usr/share/slate/pacman.conf
+SUBID_COUNT=65536
+SUBID_BASE=100000
+
+log() { printf 'slate-first-boot: %s\n' "$*"; }
+
+human_users() {
+    getent passwd | awk -F: '
+        $3 >= 1000 && $3 < 65534 &&
+        $7 !~ /(nologin|false)$/ { print $1 }'
+}
+
+install_pacman_conf() {
+    if [[ ! -f $PACMAN_CONF_SOURCE ]]; then
+        log "no packaged pacman.conf at $PACMAN_CONF_SOURCE, leaving /etc/pacman.conf alone"
+        return
+    fi
+    install -Dm644 "$PACMAN_CONF_SOURCE" /etc/pacman.conf
+    log "installed Slate's /etc/pacman.conf"
+}
+
+# Find the highest subordinate id already handed out, so a newly allocated range
+# can never overlap an existing one.
+next_subid_start() {
+    local file=$1 highest=$((SUBID_BASE - SUBID_COUNT)) start count end
+    if [[ -f $file ]]; then
+        while IFS=: read -r _ start count; do
+            [[ $start =~ ^[0-9]+$ && $count =~ ^[0-9]+$ ]] || continue
+            end=$((start + count - SUBID_COUNT))
+            (( end > highest )) && highest=$end
+        done < "$file"
+    fi
+    printf '%d' $((highest + SUBID_COUNT))
+}
+
+provision_subids() {
+    local user start
+    for user in $(human_users); do
+        if ! grep -q "^${user}:" /etc/subuid 2>/dev/null; then
+            start=$(next_subid_start /etc/subuid)
+            printf '%s:%s:%s\n' "$user" "$start" "$SUBID_COUNT" >> /etc/subuid
+            log "allocated subuid range $start+$SUBID_COUNT to $user"
+        fi
+        if ! grep -q "^${user}:" /etc/subgid 2>/dev/null; then
+            start=$(next_subid_start /etc/subgid)
+            printf '%s:%s:%s\n' "$user" "$start" "$SUBID_COUNT" >> /etc/subgid
+            log "allocated subgid range $start+$SUBID_COUNT to $user"
+        fi
+    done
+}
+
+seed_homes() {
+    if ! command -v slate-refresh-config >/dev/null 2>&1; then
+        log "slate-refresh-config not installed, skipping home seeding"
+        return
+    fi
+    slate-refresh-config --all-users || log "home seeding reported an error"
+}
+
+# Bundles contribute their own provisioning as drop-ins rather than editing this
+# script, so a bundle never has to reach into slate-base's files. Same pattern as
+# the slate-doctor checks.
+run_dropins() {
+    local dropin
+    shopt -s nullglob
+    for dropin in /usr/lib/slate/first-boot.d/*.sh; do
+        log "running $(basename "$dropin")"
+        # shellcheck disable=SC1090
+        source "$dropin" || log "$(basename "$dropin") reported an error"
+    done
+    shopt -u nullglob
+}
+
+if [[ -e $STAMP ]]; then
+    log "already provisioned, nothing to do"
+    exit 0
+fi
+
+install_pacman_conf
+provision_subids
+run_dropins
+seed_homes
+
+install -d /var/lib/slate
+: > "$STAMP"
+log "provisioning complete"

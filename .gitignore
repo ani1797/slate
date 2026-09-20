@@ -2,13 +2,18 @@
 /out/
 /work/
 /.vm/
+/.vmtest/
 
-# makepkg build artifacts left in package source directories
-packages/*/pkg/
-packages/*/src/
-packages/*/*.pkg.tar.*
-packages/*/*.tar.gz
-packages/*/*.tar.xz
-# Generated: the local package repo staged into the ISO by `make build`
-# (see Makefile's STAGED_REPO_DIR and airootfs/etc/pacman.conf's [slate] entry).
-/archiso/slate/airootfs/opt/slate-repo/
+# makepkg build artifacts left in package source directories. The globs are
+# double-starred because packages/ is tiered (meta/, bundles/, vendor/), so
+# PKGBUILDs no longer sit at a fixed depth.
+packages/**/pkg/
+packages/**/src/
+packages/**/*.pkg.tar.*
+packages/**/*.tar.gz
+packages/**/*.tar.xz
+
+# Generated: the local package repository staged into the ISO by
+# `make package-repo`, so the live session's pacstrap can resolve Slate's own
+# packages offline while installing. See the Makefile's STAGED_REPO_DIR.
+/archiso/airootfs/var/cache/slate/repo/

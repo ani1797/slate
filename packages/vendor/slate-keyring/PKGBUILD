@@ -1,0 +1,51 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-keyring
+pkgver=1
+pkgrel=1
+pkgdesc="PGP keys for verifying the published Slate package repository"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=('pacman')
+install=slate-keyring.install
+# slate-signing-pubkey.gpg.txt is the exported public half of the key CI signs
+# packages with. Committing the armored, text-diffable export (rather than a
+# binary keybox) is what makes a future key rotation a reviewable diff. Named
+# with a .txt suffix, not .asc: makepkg treats a source entry ending in .asc
+# as a detached signature *of* another source entry, which this is not.
+source=('slate-signing-pubkey.gpg.txt')
+sha256sums=('SKIP')
+
+package() {
+  local keyringdir="$pkgdir/usr/share/pacman/keyrings"
+  install -d -- "$keyringdir"
+
+  # A scratch GNUPGHOME, not the builder's real one: this step only ever
+  # needs to read one armored public key and write a keybox file into
+  # $pkgdir, and must not touch whatever GPG state the build machine has.
+  local gnupghome
+  gnupghome=$(mktemp -d)
+  trap 'rm -rf -- "$gnupghome"' RETURN
+
+  # pacman-key --populate reads three files per keyring name: a plain
+  # concatenated-OpenPGP-packets export of the actual keys (NOT a gpg keybox
+  # -- pacman-key's own import logic only understands the legacy export
+  # format, the same shape `gpg --export` produces; a `--keyring FILE
+  # --import` keybox, which is what modern GnuPG writes whenever keyboxd is
+  # active, is silently unreadable to it), a "trusted" list (fingerprint:
+  # trust-level), and a "revoked" list (this convention comes from
+  # archlinux-keyring). There is only ever one signing key today, so trusted
+  # has one line and revoked is empty but must exist.
+  gpg --homedir "$gnupghome" --no-default-keyring --keyring "$gnupghome/import.gpg" \
+    --import "$srcdir/slate-signing-pubkey.gpg.txt"
+
+  gpg --homedir "$gnupghome" --no-default-keyring --keyring "$gnupghome/import.gpg" \
+    --export --output "$keyringdir/slate.gpg"
+
+  local fpr
+  fpr=$(gpg --homedir "$gnupghome" --no-default-keyring --keyring "$gnupghome/import.gpg" \
+    --with-colons --list-keys --fingerprint | awk -F: '$1 == "fpr" { print $10; exit }')
+  printf '%s:4:\n' "$fpr" > "$keyringdir/slate-trusted"
+  : > "$keyringdir/slate-revoked"
+}

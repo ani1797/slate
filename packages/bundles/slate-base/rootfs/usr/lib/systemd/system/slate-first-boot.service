@@ -1,0 +1,19 @@
+[Unit]
+Description=Slate first-boot provisioning
+Documentation=man:slate-doctor(1)
+# Guarded by a stamp file rather than ConditionFirstBoot=yes: pacstrap often
+# initialises /etc/machine-id during installation, which would make
+# ConditionFirstBoot silently never fire on the system's actual first boot.
+ConditionPathExists=!/var/lib/slate/first-boot-done
+After=local-fs.target
+# Homes must be seeded before anyone can log in, or the first session comes up
+# unconfigured.
+Before=greetd.service display-manager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/slate/first-boot
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,26 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-dev
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="Slate's language runtimes and development toolchain"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=(
+  slate-base
+  bun
+  go
+  nodejs
+  npm
+  rust
+  uv
+)
+# This bundle ships no configuration of its own, only a package set and its
+# check. A bundle with no rootfs config is still a bundle.
+source=()
+sha256sums=()
+
+package() {
+  cp -a "$startdir/rootfs/." "$pkgdir/"
+}

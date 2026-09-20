@@ -1,0 +1,118 @@
+name: Publish package repository
+
+# Builds every package under packages/ and publishes the resulting pacman
+# repository (packages + repo database) to a persistent GitHub Release, so
+# `pacman -Syu` on an installed Slate system can actually fetch updates.
+# This is the only thing in the repo that needs CI: it publishes artifacts a
+# local `make package-repo` cannot produce (a reachable, versioned Server URL).
+#
+# Signing: packages and the repo database are signed with Slate's dedicated
+# packaging key (generated without a passphrase -- the GitHub secret it lives
+# in is already encrypted at rest, and a passphrase would only add complexity
+# to this job for no real gain). The private half lives only in the
+# SLATE_SIGNING_KEY repository secret (armored export); the public half is
+# committed at packages/vendor/slate-keyring, which is what lets an installed
+# system's pacman-key --populate slate trust it. [slate]'s SigLevel is
+# `Required DatabaseOptional` in packages/bundles/slate-base's packaged
+# pacman.conf to match. Rotating the key means: generate a new one, update
+# that secret, and re-export slate-keyring's public key (bump its pkgrel).
+
+on:
+  push:
+    branches: [main]
+    paths: ["packages/**"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-repo
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install build prerequisites
+        run: |
+          pacman -Syu --noconfirm --needed git sudo github-cli
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create unprivileged build user
+        # makepkg refuses to run as root. actions/checkout leaves the
+        # workspace owned by root inside the container, so hand it to a
+        # dedicated build user with passwordless sudo (needed for pacman -U
+        # of makedepends during the build).
+        run: |
+          useradd --create-home builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Import signing key
+        # A scratch GNUPGHOME under the build user's home, not the runner's
+        # default -- this key must not linger anywhere outside this step's
+        # own throwaway keyring, and the container is discarded after the job
+        # regardless. --batch --import is non-interactive since the key was
+        # generated with %no-protection (no passphrase to supply).
+        run: |
+          sudo -u builder mkdir -m 700 -p /home/builder/.gnupg
+          printf '%s' "${{ secrets.SLATE_SIGNING_KEY }}" | sudo -u builder gpg --homedir /home/builder/.gnupg --batch --import
+          fpr=$(sudo -u builder gpg --homedir /home/builder/.gnupg --with-colons --list-secret-keys --fingerprint | awk -F: '$1 == "fpr" { print $10; exit }')
+          echo "gpg_fpr=$fpr" >> "$GITHUB_ENV"
+
+      - name: make check-packages package-repo
+        env:
+          # See Makefile's comment on MAKEPKG_DEPS_FLAG: this container is
+          # disposable, so let makepkg install missing depends/makedepends
+          # itself rather than failing on tools a dev machine already has
+          # (e.g. `cargo` for paru).
+          MAKEPKG_DEPS_FLAG: --syncdeps
+          MAKEPKG_SIGN_FLAG: --sign
+          REPO_ADD_SIGN_FLAG: --sign
+          GNUPGHOME: /home/builder/.gnupg
+          GPGKEY: ${{ env.gpg_fpr }}
+        run: sudo -u builder --preserve-env=MAKEPKG_DEPS_FLAG,MAKEPKG_SIGN_FLAG,REPO_ADD_SIGN_FLAG,GNUPGHOME,GPGKEY make -C "$GITHUB_WORKSPACE" check-packages package-repo
+
+      - name: Prepare release assets
+        id: assets
+        # repo-add writes slate.db/slate.files as symlinks to the .tar.gz
+        # it actually populates. GitHub Releases assets must be real files
+        # (it does not preserve symlinks), so resolve them before upload.
+        run: |
+          set -eu
+          repo="$GITHUB_WORKSPACE/.build/repo"
+          assets="$GITHUB_WORKSPACE/.build/assets"
+          rm -rf -- "$assets"
+          mkdir -p -- "$assets"
+          cp -a -- "$repo"/*.pkg.tar.* "$assets"/
+          for link in "$repo"/slate.db "$repo"/slate.db.sig "$repo"/slate.files "$repo"/slate.files.sig; do
+            [ -e "$link" ] || continue
+            cp -aL -- "$link" "$assets/$(basename "$link")"
+          done
+          cp -a -- "$repo"/slate.db.tar.gz "$repo"/slate.files.tar.gz "$assets"/
+          echo "dir=$assets" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to the 'repo' release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A single rolling release (tag `repo`) is the publishing target, not
+        # one release per commit: pacman always fetches the same Server URL,
+        # so old assets for a since-removed or renamed package must be cleared
+        # rather than accumulated release after release.
+        run: |
+          set -eu
+          gh release view repo --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create repo --repo "$GITHUB_REPOSITORY" \
+                 --title "Slate package repository" \
+                 --notes "Rolling release: the latest built packages and repo database. Not a source release; see tags for that." \
+                 --latest=false
+          existing="$(gh release view repo --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')"
+          if [ -n "$existing" ]; then
+            printf '%s\n' "$existing" | xargs -r -I{} gh release delete-asset repo {} --repo "$GITHUB_REPOSITORY" --yes
+          fi
+          gh release upload repo "${{ steps.assets.outputs.dir }}"/* --repo "$GITHUB_REPOSITORY" --clobber

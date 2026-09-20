@@ -1,0 +1,28 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-base
+pkgver=1.0.0
+pkgrel=4
+pkgdesc="Slate's base system plumbing: provisioning, configuration seeding, and self-test"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=(
+  bash
+  pacman
+  systemd
+  # Carries the trust anchor for the [slate] repository this package's
+  # pacman.conf configures with SigLevel = Required DatabaseOptional; without
+  # it every package from that repo fails signature verification.
+  slate-keyring
+)
+# Configuration is authored as a filesystem tree under rootfs/ rather than as
+# individual source entries, so adding a file needs no PKGBUILD or checksum
+# edit. The tree is version-controlled, which is what actually guards its
+# integrity; local checksums would only add friction.
+source=()
+sha256sums=()
+
+package() {
+  cp -a "$startdir/rootfs/." "$pkgdir/"
+}

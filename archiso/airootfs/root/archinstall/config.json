@@ -1,0 +1,26 @@
+{
+  "kernels": [
+    "linux"
+  ],
+  "mirror_config": {
+    "custom_repositories": [
+      {
+        "name": "slate",
+        "url": "file:///var/cache/slate/repo",
+        "sign_check": "Never",
+        "sign_option": "TrustAll"
+      }
+    ]
+  },
+  "network_config": {
+    "type": "iso"
+  },
+  "ntp": true,
+  "timezone": "America/Toronto",
+  "packages": [
+    "slate"
+  ],
+  "services": [
+    "greetd"
+  ]
+}

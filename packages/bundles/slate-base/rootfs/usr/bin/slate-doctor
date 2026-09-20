@@ -1,0 +1,169 @@
+#!/bin/bash
+# slate-doctor — verify that Slate's capabilities are actually configured and
+# working on this system.
+#
+# Checks are not built into this script. Every Slate bundle ships its own check
+# file as a drop-in under CHECK_DIR, so adding a capability automatically adds
+# its verification and nothing here needs editing.
+#
+# A check file is a plain shell fragment that calls the helpers defined below
+# (check, check_file, check_dir, have, skip, as_user, slate_is_live). It is
+# sourced, not executed, so it inherits those helpers.
+#
+# Exits non-zero if any check failed, so it can gate a build or an install.
+
+set -uo pipefail
+
+CHECK_DIR=${SLATE_CHECK_DIR:-/usr/share/slate/checks}
+
+# Home-directory checks must look at a real human user, not at root. When run
+# under sudo, that is the invoking user.
+SLATE_USER=${SLATE_USER:-${SUDO_USER:-$(id -un)}}
+SLATE_HOME=$(getent passwd "$SLATE_USER" 2>/dev/null | cut -d: -f6)
+SLATE_HOME=${SLATE_HOME:-$HOME}
+
+if [[ -t 1 ]]; then
+    C_PASS=$'\033[32m'; C_FAIL=$'\033[31m'; C_SKIP=$'\033[33m'
+    C_HEAD=$'\033[1m'; C_OFF=$'\033[0m'
+else
+    C_PASS=''; C_FAIL=''; C_SKIP=''; C_HEAD=''; C_OFF=''
+fi
+
+pass_count=0
+fail_count=0
+skip_count=0
+failures=()
+
+# True on the live ISO, false on an installed system. archiso mounts /run/archiso.
+slate_is_live() { [[ -d /run/archiso ]]; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+as_user() { runuser -u "$SLATE_USER" -- "$@"; }
+
+check() {
+    local desc=$1; shift
+    if "$@" >/dev/null 2>&1; then
+        printf '  %s✓%s %s\n' "$C_PASS" "$C_OFF" "$desc"
+        pass_count=$((pass_count + 1))
+    else
+        printf '  %s✗%s %s\n' "$C_FAIL" "$C_OFF" "$desc"
+        fail_count=$((fail_count + 1))
+        failures+=("$current_capability: $desc")
+    fi
+}
+
+check_file() { check "$1" test -f "$2"; }
+check_dir()  { check "$1" test -d "$2"; }
+
+# Assert that a command fails — "this bad thing is absent" is as much a check as
+# "this good thing is present", and `!` cannot be passed through "$@".
+check_not() {
+    local desc=$1; shift
+    if "$@" >/dev/null 2>&1; then
+        printf '  %s✗%s %s\n' "$C_FAIL" "$C_OFF" "$desc"
+        fail_count=$((fail_count + 1))
+        failures+=("$current_capability: $desc")
+    else
+        printf '  %s✓%s %s\n' "$C_PASS" "$C_OFF" "$desc"
+        pass_count=$((pass_count + 1))
+    fi
+}
+
+is_root() { [[ $(id -u) -eq 0 ]]; }
+
+skip() {
+    printf '  %s-%s %s (%s)\n' "$C_SKIP" "$C_OFF" "$1" "${2:-not applicable here}"
+    skip_count=$((skip_count + 1))
+}
+
+capability_name() {
+    local base
+    base=$(basename "$1" .sh)
+    printf '%s' "${base#slate-}"
+}
+
+list_checks() {
+    local f
+    shopt -s nullglob
+    for f in "$CHECK_DIR"/*.sh; do
+        printf '%s\n' "$(capability_name "$f")"
+    done
+    shopt -u nullglob
+}
+
+usage() {
+    cat <<'EOF'
+Usage: slate-doctor [CAPABILITY...]
+
+Verify Slate's capabilities on this system. With no arguments, every capability
+is checked. Exits non-zero if any check fails.
+
+  slate-doctor              check everything
+  slate-doctor containers   check one capability
+  slate-doctor --list       list checkable capabilities
+EOF
+}
+
+case "${1-}" in
+    -h|--help) usage; exit 0 ;;
+    --list)    list_checks; exit 0 ;;
+esac
+
+if [[ ! -d $CHECK_DIR ]]; then
+    printf 'No checks installed at %s\n' "$CHECK_DIR" >&2
+    exit 1
+fi
+
+shopt -s nullglob
+all_files=("$CHECK_DIR"/*.sh)
+shopt -u nullglob
+
+if [[ ${#all_files[@]} -eq 0 ]]; then
+    printf 'No checks installed at %s\n' "$CHECK_DIR" >&2
+    exit 1
+fi
+
+selected=()
+if [[ $# -eq 0 ]]; then
+    selected=("${all_files[@]}")
+else
+    for want in "$@"; do
+        found=""
+        for f in "${all_files[@]}"; do
+            if [[ $(capability_name "$f") == "$want" ]]; then
+                found=$f
+                break
+            fi
+        done
+        if [[ -z $found ]]; then
+            printf 'Unknown capability: %s\n' "$want" >&2
+            printf 'Known capabilities: %s\n' "$(list_checks | tr '\n' ' ')" >&2
+            exit 2
+        fi
+        selected+=("$found")
+    done
+fi
+
+if slate_is_live; then
+    printf '%sSlate live session%s (user: %s)\n\n' "$C_HEAD" "$C_OFF" "$SLATE_USER"
+else
+    printf '%sSlate installed system%s (user: %s)\n\n' "$C_HEAD" "$C_OFF" "$SLATE_USER"
+fi
+
+for f in "${selected[@]}"; do
+    current_capability=$(capability_name "$f")
+    printf '%s%s%s\n' "$C_HEAD" "$current_capability" "$C_OFF"
+    # shellcheck disable=SC1090
+    source "$f"
+    printf '\n'
+done
+
+printf '%s%d passed, %d failed, %d skipped%s\n' \
+    "$C_HEAD" "$pass_count" "$fail_count" "$skip_count" "$C_OFF"
+
+if [[ $fail_count -gt 0 ]]; then
+    printf '\nFailed:\n'
+    printf '  %s\n' "${failures[@]}"
+    exit 1
+fi

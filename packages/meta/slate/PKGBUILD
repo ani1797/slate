@@ -1,0 +1,29 @@
+# Maintainer: Slate contributors
+
+pkgname=slate
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="Slate: an opinionated, Arch-based Agentic OS"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+# This depends list is the single definition of what a Slate system is. The ISO's
+# packages.x86_64 and archinstall's config.json both resolve through it rather
+# than repeating it, so the live image and an installed system cannot drift.
+#
+# A meta-package rather than a pacman group: only a meta-package propagates
+# newly added members to existing systems on `pacman -Syu`. A group does not.
+depends=(
+  slate-base
+  slate-desktop
+  slate-shell
+  slate-launcher
+  slate-capture
+  slate-dev
+  slate-containers
+  slate-ssh
+  # AUR helper, so the system can reach beyond the official repositories.
+  paru
+)
+source=()
+sha256sums=()

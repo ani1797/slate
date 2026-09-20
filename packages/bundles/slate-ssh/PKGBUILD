@@ -1,0 +1,27 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-ssh
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate's SSH capability: a per-user agent, hardened sshd, and client defaults"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=(
+  slate-base
+  openssh
+  # GUI passphrase prompt for non-TTY contexts (e.g. a git push triggered from
+  # outside a terminal). Slate already depends on Qt6 via vicinae-bin, so this
+  # pulls in only liblxqt, libqtxdg, and polkit-qt6 beyond what is already there.
+  lxqt-openssh-askpass
+)
+# Configuration is authored as a filesystem tree under rootfs/ rather than as
+# individual source entries, so adding a file needs no PKGBUILD or checksum
+# edit. The tree is version-controlled, which is what actually guards its
+# integrity; local checksums would only add friction.
+source=()
+sha256sums=()
+
+package() {
+  cp -a "$startdir/rootfs/." "$pkgdir/"
+}

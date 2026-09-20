@@ -1,0 +1,11 @@
+# Populates the system's pacman keyring with Slate's signing key so
+# `SigLevel = Required DatabaseOptional` on the [slate] repository can
+# actually verify anything, instead of failing closed on every package.
+
+post_install() {
+  pacman-key --populate slate
+}
+
+post_upgrade() {
+  post_install
+}

@@ -1,0 +1,48 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-desktop
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate's desktop session: Hyprland, portals, audio, greeter and fonts"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+depends=(
+  slate-base
+  # Compositor and session
+  hyprland
+  xorg-xwayland
+  xdg-desktop-portal
+  xdg-desktop-portal-hyprland
+  # Audio
+  pipewire
+  pipewire-pulse
+  wireplumber
+  # Greeter. The greetd package owns /etc/greetd/config.toml, so Slate's own
+  # greeter configuration is installed from /usr/share/slate by a first-boot
+  # drop-in rather than shipped at that path.
+  greetd
+  greetd-tuigreet
+  # Without a font package no Wayland client can render text at all - confirmed
+  # by boot-testing, not a cosmetic nice-to-have. ttf-jetbrains-mono-nerd is the
+  # configured terminal font (ligatures + Nerd Font glyphs); ttf-dejavu is the
+  # general-purpose fallback for apps that don't request a specific font.
+  ttf-dejavu
+  ttf-jetbrains-mono-nerd
+)
+# Configuration is authored as a filesystem tree under rootfs/ rather than as
+# individual source entries, so adding a file needs no PKGBUILD or checksum edit.
+source=()
+sha256sums=()
+
+package() {
+  cp -a "$startdir/rootfs/." "$pkgdir/"
+
+  # /etc/skel seeds accounts created after this package is installed; the copy
+  # under /usr/share/slate/config is the pristine one slate-refresh-config
+  # re-seeds from for accounts that already existed.
+  if [ -d "$pkgdir/usr/share/slate/config" ]; then
+    install -d "$pkgdir/etc/skel"
+    cp -a "$pkgdir/usr/share/slate/config/." "$pkgdir/etc/skel/"
+  fi
+}

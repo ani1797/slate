@@ -1,0 +1,28 @@
+# Maintainer: Slate contributors
+
+pkgname=slate-live
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Slate's live/install environment: the full system plus installation tooling"
+arch=('any')
+url="https://github.com/ani1797/slate"
+license=('MIT')
+# The live image is deliberately the real system plus the few things that only
+# make sense while running from install media. Showcasing Slate and installing
+# Slate are the same image, so what you try is what you get.
+depends=(
+  slate
+  # Installation tooling
+  archinstall
+  iwd
+  sudo
+  # The live root is itself an overlay (erofs + tmpfs cow), and the kernel's
+  # overlay driver cannot mount overlay-on-overlay - confirmed by boot-testing
+  # ("'overlay' is not supported over overlayfs"). fuse-overlayfs is podman's
+  # documented answer for exactly this backing-filesystem case. An installed
+  # system has a real filesystem underneath and uses the faster native driver,
+  # which is why this is live-only.
+  fuse-overlayfs
+)
+source=()
+sha256sums=()

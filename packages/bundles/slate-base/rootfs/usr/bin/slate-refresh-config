@@ -1,0 +1,96 @@
+#!/bin/bash
+# slate-refresh-config — seed a user's home directory with Slate's default
+# configuration from /usr/share/slate/config.
+#
+# Why this exists rather than a package scriptlet: /etc/skel only seeds accounts
+# at creation time, and archinstall creates the user account *before* installing
+# Slate's packages, so /etc/skel is still empty at that moment. Copying skel into
+# existing homes from a post_install scriptlet would fix that, but it would also
+# silently overwrite the user's own edits on every single upgrade. So the copy is
+# an explicit, re-runnable command instead, and it never overwrites by default.
+
+set -euo pipefail
+
+SOURCE_DIR=${SLATE_CONFIG_DIR:-/usr/share/slate/config}
+
+force=0
+all_users=0
+targets=()
+
+usage() {
+    cat <<'EOF'
+Usage: slate-refresh-config [OPTIONS]
+
+Seed Slate's default configuration into a user's home directory. Existing files
+are left untouched unless --force is given.
+
+  --user NAME    seed this user (repeatable; defaults to the invoking user)
+  --all-users    seed every human user on the system
+  --force        overwrite files that already exist
+  -h, --help     show this help
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --user)     targets+=("$2"); shift 2 ;;
+        --all-users) all_users=1; shift ;;
+        --force)    force=1; shift ;;
+        -h|--help)  usage; exit 0 ;;
+        *) printf 'Unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+    esac
+done
+
+if [[ ! -d $SOURCE_DIR ]]; then
+    printf 'No Slate configuration found at %s\n' "$SOURCE_DIR" >&2
+    exit 1
+fi
+
+# A "human user" is a normal login account in the regular UID range with a real
+# shell — this deliberately excludes system accounts and greetd's own user.
+human_users() {
+    getent passwd | awk -F: '
+        $3 >= 1000 && $3 < 65534 &&
+        $7 !~ /(nologin|false)$/ { print $1 }'
+}
+
+if [[ $all_users -eq 1 ]]; then
+    mapfile -t targets < <(human_users)
+elif [[ ${#targets[@]} -eq 0 ]]; then
+    targets=("${SUDO_USER:-$(id -un)}")
+fi
+
+if [[ ${#targets[@]} -eq 0 ]]; then
+    printf 'No users to seed.\n'
+    exit 0
+fi
+
+for user in "${targets[@]}"; do
+    entry=$(getent passwd "$user" || true)
+    if [[ -z $entry ]]; then
+        printf 'Skipping %s: no such user\n' "$user" >&2
+        continue
+    fi
+
+    home=$(cut -d: -f6 <<<"$entry")
+    group=$(id -gn "$user")
+
+    if [[ -z $home || ! -d $home ]]; then
+        printf 'Skipping %s: home directory %s does not exist\n' "$user" "${home:-<unset>}" >&2
+        continue
+    fi
+
+    if [[ $force -eq 1 ]]; then
+        cp -a -- "$SOURCE_DIR"/. "$home"/
+    else
+        cp -a --no-clobber -- "$SOURCE_DIR"/. "$home"/
+    fi
+
+    # Only fix ownership of what we may have just created; chowning the whole
+    # home would be a surprising side effect on a system with mixed ownership.
+    while IFS= read -r -d '' rel; do
+        chown -h "$user:$group" "$home/$rel"
+    done < <(cd "$SOURCE_DIR" && find . -mindepth 1 -printf '%P\0')
+
+    printf 'Seeded Slate configuration into %s\n' "$home"
+done
