@@ -92,6 +92,12 @@ check-packages:
 		exit 1; \
 	fi
 
+# The --syncdeps branch below repo-adds each package into a *separate*,
+# unsigned slate-local.db.tar.gz the moment it's built, and refreshes pacman
+# so the next package's depends= on it can resolve. This is distinct from the
+# real, signed slate.db.tar.gz that package-repo builds once at the end from
+# every finished package; see the CI workflow's "Configure a build-time local
+# repo" step for the matching [slate-local] repo registration.
 packages: check-packages
 	@rm -rf -- "$(PACKAGE_BUILD_DIR)" "$(REPO_DIR)"
 	@mkdir -p "$(PACKAGE_BUILD_DIR)" "$(PACKAGE_SOURCE_DIR)" "$(REPO_DIR)"
@@ -103,10 +109,6 @@ packages: check-packages
 		makepkg --dir "$$dir" \
 			--cleanbuild --clean --force $(MAKEPKG_DEPS_FLAG) $(MAKEPKG_SIGN_FLAG) --noconfirm; \
 		if [ "$(MAKEPKG_DEPS_FLAG)" = "--syncdeps" ]; then \
-			# slate-local.db, not slate.db: a throwaway build-time index for
-			# makepkg's own dependency resolution (see the CI workflow's
-			# "Configure a build-time local repo" step), never signed or
-			# published -- distinct from the slate.db package-repo builds below.
 			repo-add --quiet "$(REPO_DIR)/slate-local.db.tar.gz" "$(REPO_DIR)"/*.pkg.tar.zst; \
 			sudo pacman -Sy --noconfirm; \
 		fi; \
