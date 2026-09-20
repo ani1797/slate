@@ -103,7 +103,11 @@ packages: check-packages
 		makepkg --dir "$$dir" \
 			--cleanbuild --clean --force $(MAKEPKG_DEPS_FLAG) $(MAKEPKG_SIGN_FLAG) --noconfirm; \
 		if [ "$(MAKEPKG_DEPS_FLAG)" = "--syncdeps" ]; then \
-			repo-add --quiet $(REPO_ADD_SIGN_FLAG) "$(REPO_DIR)/slate.db.tar.gz" "$(REPO_DIR)"/*.pkg.tar.zst; \
+			# slate-local.db, not slate.db: a throwaway build-time index for
+			# makepkg's own dependency resolution (see the CI workflow's
+			# "Configure a build-time local repo" step), never signed or
+			# published -- distinct from the slate.db package-repo builds below.
+			repo-add --quiet "$(REPO_DIR)/slate-local.db.tar.gz" "$(REPO_DIR)"/*.pkg.tar.zst; \
 			sudo pacman -Sy --noconfirm; \
 		fi; \
 	done

@@ -78,7 +78,7 @@ jobs:
         run: |
           repo_dir="$GITHUB_WORKSPACE/.build/repo"
           sudo -u builder mkdir -p "$repo_dir"
-          sudo -u builder repo-add --quiet "$repo_dir/slate.db.tar.gz"
+          sudo -u builder repo-add --quiet "$repo_dir/slate-local.db.tar.gz"
           printf '\n[slate-local]\nSigLevel = Never\nServer = file://%s\n' "$repo_dir" >> /etc/pacman.conf
           pacman -Sy --noconfirm
 
