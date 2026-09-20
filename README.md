@@ -75,7 +75,9 @@ Once installed, `pacman -Syu` reaches Slate's own packages through a `[slate]`
 repository pointing at a GitHub Release (`.github/workflows/publish-repo.yml`
 rebuilds and republishes it from `packages/` on every push to `main`). This
 replaces archinstall's install-media-only repo entry on first boot — see
-`slate-first-boot.service` above.
+`slate-first-boot.service` above. The repository must stay **public**: GitHub
+Release assets on a private repo require an authenticated request even for
+direct download links, and plain `pacman` has no way to send one.
 
 **Signed.** Packages and the repo database are signed with Slate's dedicated
 packaging key; `[slate]`'s `SigLevel` is `Required DatabaseOptional`. Trust is
@@ -87,6 +89,13 @@ carries the public key and populates it into pacman's keyring via
 the CI container for each publish run and never written to disk elsewhere.
 Rotating the key: generate a new one, update that secret, and re-export
 `packages/vendor/slate-keyring`'s public key (bump its `pkgrel`).
+
+Verified end-to-end against the live, published repository: a scratch pacman
+root with no prior trust, using `SigLevel = Never` to install `slate-keyring`
+(mirroring the ISO's offline install-time trust), then switched to
+`SigLevel = Required DatabaseOptional` and confirmed `pacman -Sy` and a real
+package install both succeed, and that a tampered package is rejected with a
+PGP signature error.
 
 ## Verifying
 
